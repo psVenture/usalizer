@@ -1,8 +1,11 @@
-﻿unit BMDBueroUnit2;
+﻿unit ToolsUnit3;
 
 
 interface
 
+uses
+  ToolsUnit1;
+  
 
 
 implementation

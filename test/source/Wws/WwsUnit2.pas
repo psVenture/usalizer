@@ -1,4 +1,4 @@
-﻿unit BMDPpsUnit2;
+﻿unit WwsUnit2;
 
 
 interface

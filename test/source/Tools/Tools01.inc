@@ -2,11 +2,11 @@
 // the "include-File"
 //-------------------------------
 
-  BMDToolsUnit1,
-  BMDToolsUnit2,
+  ToolsUnit1,
+  ToolsUnit2,
   
-  {$IFDEF BMDIW}
-    BMDToolsIWUnit1,
+  {$IFDEF IW}
+    ToolsIWUnit1,
   {$ENDIF}
   
-  BMDToolsUnit3,  
+  ToolsUnit3,  

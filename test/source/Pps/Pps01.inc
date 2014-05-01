@@ -2,11 +2,11 @@
 // the "include-File"
 //-------------------------------
 
-  BMDPpsUnit1,
-  BMDPpsUnit2,
+  PpsUnit1,
+  PpsUnit2,
   
-  {$IFDEF BMDIW}
-    BMDPpsIWUnit1,
+  {$IFDEF IW}
+    PpsIWUnit1,
   {$ENDIF}
   
-  BMDPpsUnit3,  
+  PpsUnit3,  

@@ -1,4 +1,4 @@
-﻿unit BMDWwsIWUnit1;
+﻿unit BueroIWUnit1;
 
 
 interface

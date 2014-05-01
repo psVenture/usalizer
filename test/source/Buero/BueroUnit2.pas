@@ -1,4 +1,4 @@
-﻿unit BMDWwsUnit2;
+﻿unit BueroUnit2;
 
 
 interface
@@ -7,7 +7,8 @@ interface
 
 implementation
 
-
+uses
+  PpsUnit2;
 
 
 end.

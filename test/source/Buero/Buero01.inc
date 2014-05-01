@@ -2,11 +2,11 @@
 // the "include-File"
 //-------------------------------
 
-  BMDBueroUnit1,
-  BMDBueroUnit2,
+  BueroUnit1,
+  BueroUnit2,
   
-  {$IFDEF BMDIW}
-    BMDBueroIWUnit1,
+  {$IFDEF IW}
+    BueroIWUnit1,
   {$ENDIF}
   
-  BMDBueroUnit3,  
+  BueroUnit3,  

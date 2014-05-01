@@ -1,4 +1,4 @@
-﻿unit BMDBueroUnit1;
+﻿unit WwsIWUnit1;
 
 
 interface
@@ -11,4 +11,3 @@ implementation
 
 
 end.
-  
