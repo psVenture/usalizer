@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+# SharpDevelop 5.0
+VisualStudioVersion = 12.0.20827.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Usalizer", "Usalizer\Usalizer.csproj", "{2A1CA699-7515-47B1-ADEC-03E32876A163}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Usalizer.Analysis", "Usalizer.Analysis\Usalizer.Analysis.csproj", "{29C54960-28ED-4273-B8E1-89E582FB6D57}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2A1CA699-7515-47B1-ADEC-03E32876A163}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A1CA699-7515-47B1-ADEC-03E32876A163}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A1CA699-7515-47B1-ADEC-03E32876A163}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A1CA699-7515-47B1-ADEC-03E32876A163}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29C54960-28ED-4273-B8E1-89E582FB6D57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29C54960-28ED-4273-B8E1-89E582FB6D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29C54960-28ED-4273-B8E1-89E582FB6D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29C54960-28ED-4273-B8E1-89E582FB6D57}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

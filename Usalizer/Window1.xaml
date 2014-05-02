@@ -1,0 +1,47 @@
+<Window x:Class="Usalizer.Window1"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	Title="Usalizer" Height="500" Width="700">
+	<DockPanel>
+		<Menu DockPanel.Dock="Top">
+			<MenuItem Header="File">
+				
+			</MenuItem>
+		</Menu>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="*"/>
+			</Grid.RowDefinitions>
+			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
+				</Grid.RowDefinitions>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="Auto"/>
+					<ColumnDefinition Width="*"/>
+				</Grid.ColumnDefinitions>
+				<Label Margin="3">Base-Directory:</Label>
+				<TextBox Margin="3" Name="baseDirectory" Grid.Column="1" />
+				<Label Margin="3" Grid.Row="1">Directives:</Label>
+				<TextBox Margin="3" Name="directives" Grid.Row="1" Grid.Column="1" />
+				<StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center">
+					<Button Content="Start" Margin="5" MinWidth="150" />
+				</StackPanel>
+			</Grid>
+			<TabControl Grid.Row="1">
+				<TabItem Header="Results">
+				
+				</TabItem>
+				<TabItem Header="Graph">
+				
+				</TabItem>
+				<TabItem Header="Code Browser">
+				
+				</TabItem>
+			</TabControl>
+		</Grid>
+	</DockPanel>
+</Window>
