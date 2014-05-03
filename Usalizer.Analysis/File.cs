@@ -20,11 +20,19 @@ using System.Collections.Generic;
 
 namespace Usalizer.Analysis
 {
-	public class File
+	public class DelphiFile
 	{
 		public string UnitName { get; private set; }
 		public string Location { get; private set; }
 		public List<UsesClause> InterfaceUses { get; private set; }
 		public List<UsesClause> ImplementationUses { get; private set; }
+		
+		public DelphiFile(string unitName, string location)
+		{
+			this.UnitName = unitName;
+			this.Location = location;
+			this.ImplementationUses = new List<UsesClause>();
+			this.InterfaceUses = new List<UsesClause>();
+		}
 	}
 }

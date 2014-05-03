@@ -23,9 +23,9 @@ namespace Usalizer.Analysis
 {
 	public class DelphiTokenizer
 	{
-		readonly StringReader reader;
+		readonly TextReader reader;
 
-		public DelphiTokenizer(StringReader reader)
+		public DelphiTokenizer(TextReader reader)
 		{
 			if (reader == null)
 				throw new ArgumentNullException("reader");
@@ -39,8 +39,7 @@ namespace Usalizer.Analysis
 				value = reader.Read();
 				if (value < 0)
 					return new Token(TokenKind.EOF);
-			}
-			while (value <= (int)' ');
+			} while (value <= (int)' ');
 			char ch = (char)value;
 			switch (ch) {
 				case '(':
@@ -58,7 +57,22 @@ namespace Usalizer.Analysis
 					if (reader.Peek() == (int)'$')
 						return PreprocessorDirecive();
 					return Comment('{');
+				case ';':
+					return new Token(TokenKind.Semicolon);
+				case '.':
+					return new Token(TokenKind.Dot);
+				case ':':
+					return new Token(TokenKind.Colon);
+				case ',':
+					return new Token(TokenKind.Comma);
 				default:
+					if (char.IsLetter(ch)) {
+						string identifier = Identifier(ch);
+						if (IsKeyword(identifier)) {
+							return new Token(TokenKind.Keyword, identifier);
+						}
+						return new Token(TokenKind.Identifier, identifier);
+					}
 					return new Token(TokenKind.Any);
 			}
 		}
@@ -105,6 +119,32 @@ namespace Usalizer.Analysis
 			}
 			while (val > -1 && val != (int)'}');
 			return new Token(TokenKind.Comment, sb.ToString());
+		}
+
+		string Identifier(char ch)
+		{
+			StringBuilder sb = new StringBuilder(ch.ToString());
+			int val = reader.Peek();
+			while (val > 0 && (char.IsLetterOrDigit((char)val) || val == (int)'_')) {
+				sb.Append((char)reader.Read());
+				val = reader.Peek();
+			}
+			return sb.ToString();
+		}
+
+		bool IsKeyword(string identifier)
+		{
+			switch (identifier.ToUpperInvariant()) {
+				case "UNIT":
+					return true;
+				case "INTERFACE":
+					return true;
+				case "IMPLEMENTATION":
+					return true;
+				case "END":
+					return true;
+			}
+			return false;
 		}
 	}
 }

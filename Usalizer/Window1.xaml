@@ -1,11 +1,12 @@
 <Window x:Class="Usalizer.Window1"
-	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-	Title="Usalizer" Height="500" Width="700">
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:tv="http://icsharpcode.net/sharpdevelop/treeview"
+        Title="Usalizer" Height="500" Width="700">
 	<DockPanel>
 		<Menu DockPanel.Dock="Top">
 			<MenuItem Header="File">
-				
+			
 			</MenuItem>
 		</Menu>
 		<Grid>
@@ -24,16 +25,23 @@
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
 				<Label Margin="3">Base-Directory:</Label>
-				<TextBox Margin="3" Name="baseDirectory" Grid.Column="1" />
+				<TextBox Margin="3" Name="baseDirectory" Text="..\test" Grid.Column="1" />
 				<Label Margin="3" Grid.Row="1">Directives:</Label>
 				<TextBox Margin="3" Name="directives" Grid.Row="1" Grid.Column="1" />
 				<StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center">
-					<Button Content="Start" Margin="5" MinWidth="150" />
+					<Button Content="Start" Name="startButton" Click="StartClick" Margin="5" MinWidth="150" />
 				</StackPanel>
 			</Grid>
-			<TabControl Grid.Row="1">
+			<StackPanel Orientation="Vertical" Grid.Row="1" Name="progressView" Visibility="Collapsed">
+				<ProgressBar Name="progress" Margin="3" Height="16" Width="500" Maximum="1" Minimum="0" />
+				<TextBlock Name="progressText" Width="500" TextTrimming="CharacterEllipsis" />
+			</StackPanel>
+			<TabControl Grid.Row="1" Name="resultsView" Visibility="Collapsed">
 				<TabItem Header="Results">
-				
+					<DockPanel>
+						<TextBox DockPanel.Dock="Top" Margin="3" />
+						<tv:SharpTreeView Margin="3"  />
+					</DockPanel>
 				</TabItem>
 				<TabItem Header="Graph">
 				

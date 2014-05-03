@@ -36,6 +36,18 @@ namespace Usalizer.Analysis
 			this.Kind = kind;
 			this.Value = value;
 		}
+		
+		public override string ToString()
+		{
+			return string.Format("[Token Kind={0}, Value={1}]", Kind, Value);
+		}
+	}
+	
+	public enum DirectiveKind
+	{
+		Include,
+		IfDef,
+		IfNDef
 	}
 	
 	public enum TokenKind
