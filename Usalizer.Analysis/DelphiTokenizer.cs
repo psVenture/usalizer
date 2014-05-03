@@ -24,14 +24,14 @@ namespace Usalizer.Analysis
 	public class DelphiTokenizer
 	{
 		readonly TextReader reader;
-
+		
 		public DelphiTokenizer(TextReader reader)
 		{
 			if (reader == null)
 				throw new ArgumentNullException("reader");
 			this.reader = reader;
 		}
-
+		
 		public Token Next()
 		{
 			int value;
@@ -40,12 +40,17 @@ namespace Usalizer.Analysis
 				if (value < 0)
 					return new Token(TokenKind.EOF);
 			} while (value <= (int)' ');
+			
 			char ch = (char)value;
 			switch (ch) {
 				case '(':
 					int next = reader.Peek();
-					if (next == (int)'*')
+					if (next == (int)'*') {
+						reader.Read();
+						if (reader.Peek() == (int)'$')
+							return PreprocessorDirecive('*');
 						return Comment('*');
+					}
 					if (next == (int)'.') {
 						reader.Read();
 						return new Token(TokenKind.Any);
@@ -55,7 +60,7 @@ namespace Usalizer.Analysis
 					return new Token(TokenKind.CloseParens);
 				case '{':
 					if (reader.Peek() == (int)'$')
-						return PreprocessorDirecive();
+						return PreprocessorDirecive('{');
 					return Comment('{');
 				case ';':
 					return new Token(TokenKind.Semicolon);
@@ -65,18 +70,22 @@ namespace Usalizer.Analysis
 					return new Token(TokenKind.Colon);
 				case ',':
 					return new Token(TokenKind.Comma);
+				case '/':
+					if (reader.Peek() == (int)'/')
+						return Comment('/');
+					return new Token(TokenKind.Divide);
 				default:
 					if (char.IsLetter(ch)) {
 						string identifier = Identifier(ch);
 						if (IsKeyword(identifier)) {
-							return new Token(TokenKind.Keyword, identifier);
+							return new Token(TokenKind.Keyword, identifier.ToLowerInvariant());
 						}
 						return new Token(TokenKind.Identifier, identifier);
 					}
 					return new Token(TokenKind.Any);
 			}
 		}
-
+		
 		Token Comment(char c)
 		{
 			int val;
@@ -91,7 +100,6 @@ namespace Usalizer.Analysis
 					while (val > -1 && val != (int)'}');
 					return new Token(TokenKind.Comment);
 				case '*':
-					reader.Read();
 					while (true) {
 						val = reader.Read();
 						if (val == -1)
@@ -107,20 +115,44 @@ namespace Usalizer.Analysis
 					throw new NotSupportedException();
 			}
 		}
-
-		Token PreprocessorDirecive()
+		
+		Token PreprocessorDirecive(char ch)
 		{
+			reader.Read(); // skip $
 			StringBuilder sb = new StringBuilder();
-			int val;
-			do {
-				val = reader.Read();
-				if (val > 0)
-					sb.Append((char)val);
+			int val = -1;
+			switch (ch) {
+				case '{':
+					do {
+						if (val > -1)
+							sb.Append((char)val);
+						val = reader.Read();
+					}
+					while (val > -1 && val != (int)'}');
+					break;
+				case '*':
+					while (true) {
+						val = reader.Read();
+						if (val == -1)
+							break;
+						if (val != (int)'*') {
+							sb.Append((char)val);
+							continue;
+						}
+						val = reader.Peek();
+						if (val == -1 || val == (int)')') {
+							reader.Read();
+							break;
+						}
+						sb.Append('*');
+					}
+					break;
+				default:
+					throw new NotSupportedException();
 			}
-			while (val > -1 && val != (int)'}');
-			return new Token(TokenKind.Comment, sb.ToString());
+			return new Token(TokenKind.Directive, sb.ToString());
 		}
-
+		
 		string Identifier(char ch)
 		{
 			StringBuilder sb = new StringBuilder(ch.ToString());
@@ -131,19 +163,31 @@ namespace Usalizer.Analysis
 			}
 			return sb.ToString();
 		}
-
+		
 		bool IsKeyword(string identifier)
 		{
 			switch (identifier.ToUpperInvariant()) {
-				case "UNIT":
+				case "AND":
 					return true;
-				case "INTERFACE":
+				case "ARRAY":
 					return true;
-				case "IMPLEMENTATION":
+				case "AS":
+					return true;
+				case "ASM":
 					return true;
 				case "END":
 					return true;
-			}
+				case "IMPLEMENTATION":
+					return true;
+				case "INTERFACE":
+					return true;
+				case "UNIT":
+					return true;
+				case "UNTIL":
+					return true;
+				case "USES":
+					return true;
+		}
 			return false;
 		}
 	}

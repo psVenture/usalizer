@@ -39,15 +39,28 @@ namespace Usalizer.Analysis
 		
 		public override string ToString()
 		{
+			if (Value == null)
+				return string.Format("[Token Kind={0}]", Kind);
 			return string.Format("[Token Kind={0}, Value={1}]", Kind, Value);
+		}
+	}
+	
+	public static class TokenExtensions
+	{
+		public static bool IsKeyword(this Token token, string kw)
+		{
+			return token.Kind == TokenKind.Keyword && string.Equals(token.Value, kw, StringComparison.OrdinalIgnoreCase);
 		}
 	}
 	
 	public enum DirectiveKind
 	{
+		Error,
 		Include,
 		IfDef,
-		IfNDef
+		IfNDef,
+		Else,
+		EndIf
 	}
 	
 	public enum TokenKind

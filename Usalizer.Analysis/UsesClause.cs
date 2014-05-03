@@ -27,6 +27,18 @@ namespace Usalizer.Analysis
 		public string Name { get; private set; }
 		public string Namespace { get; private set; }
 		public string InLocation { get; private set; }
+		
+		public UsesClause(string name, string @namespace = null, string inLocation = null)
+		{
+			this.Name = name;
+			this.Namespace = @namespace;
+			this.InLocation = inLocation;
+		}
+		
+		public override string ToString()
+		{
+			return string.Format("[UsesClause Name={0}, Namespace={1}, InLocation={2}]", Name, Namespace, InLocation);
+		}
 	}
 }
 
