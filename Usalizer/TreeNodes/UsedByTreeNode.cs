@@ -16,33 +16,38 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Linq;
+using ICSharpCode.TreeView;
+using Usalizer.Analysis;
 
-namespace Usalizer.Analysis
+namespace Usalizer.TreeNodes
 {
-	/// <summary>
-	/// [Namespace.]Name [in 'InLocation']
-	/// </summary>
-	public class UsesClause
+	public class UsedByTreeNode : SharpTreeNode
 	{
-		public DelphiFile File { get; private set; }
-		public string Name { get; private set; }
-		public string Namespace { get; private set; }
-		public string InLocation { get; private set; }
-		
-		public UsesClause(DelphiFile file, string name, string @namespace = null, string inLocation = null)
+		DelphiFile file;
+
+		UsesSection section;
+
+		public UsedByTreeNode(DelphiFile file, UsesSection section)
 		{
 			if (file == null)
 				throw new ArgumentNullException("file");
-			this.File = file;
-			this.Name = name;
-			this.Namespace = @namespace;
-			this.InLocation = inLocation;
+			this.file = file;
+			this.section = section;
+			this.LazyLoading = true;
 		}
-		
-		public override string ToString()
+
+		public override object Text {
+			get {
+				return "used by" + section.GetSectionText();
+			}
+		}
+
+		protected override void LoadChildren()
 		{
-			return string.Format("[UsesClause Name={0}, Namespace={1}, InLocation={2}]", Name, Namespace, InLocation);
+			Children.AddRange(Window1.CurrentAnalysis.FindReferences(file.UnitName, section).Select(f => new DelphiFileTreeNode(f)));
 		}
 	}
 }
+
 

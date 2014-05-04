@@ -16,7 +16,6 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using ICSharpCode.TreeView;
 using Usalizer.Analysis;
@@ -40,65 +39,10 @@ namespace Usalizer.TreeNodes
 		public override object Text {
 			get { return file.UnitName; }
 		}
-	}
-	
-	public class UsesTreeNode : SharpTreeNode
-	{
-		DelphiFile file;
-		UsesSection section;
 		
-		public UsesTreeNode(DelphiFile file, UsesSection section)
+		public override void ActivateItem(System.Windows.RoutedEventArgs e)
 		{
-			if (file == null)
-				throw new ArgumentNullException("file");
-			this.file = file;
-			this.section = section;
-			this.LazyLoading = true;
-		}
-		
-		public override object Text {
-			get { return "uses" + section.GetSectionText(); }
-		}
-		
-		protected override void LoadChildren()
-		{
-			IEnumerable<UsesClause> source = Enumerable.Empty<UsesClause>();
-			switch (section) {
-				case UsesSection.Both:
-					source = file.InterfaceUses.Concat(file.ImplementationUses);
-					break;
-				case UsesSection.Interface:
-					source = file.InterfaceUses;
-					break;
-				case UsesSection.Implementation:
-					source = file.ImplementationUses;
-					break;
-			}
-			Children.AddRange(source.OrderBy(c => c.Name).Select(c => new DelphiFileTreeNode(Window1.CurrentAnalysis.ResolveUnitName(c.Name, c.InLocation))));
-		}
-	}
-	
-	public class UsedByTreeNode : SharpTreeNode
-	{
-		DelphiFile file;
-		UsesSection section;
-		
-		public UsedByTreeNode(DelphiFile file, UsesSection section)
-		{
-			if (file == null)
-				throw new ArgumentNullException("file");
-			this.file = file;
-			this.section = section;
-			this.LazyLoading = true;
-		}
-		
-		public override object Text {
-			get { return "used by" + section.GetSectionText(); }
-		}
-		
-		protected override void LoadChildren()
-		{
-			Children.AddRange(Window1.CurrentAnalysis.FindReferences(file.UnitName, section).Select(f => new DelphiFileTreeNode(f)));
+			Window1.BrowseUnit(file);
 		}
 	}
 	

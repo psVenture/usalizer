@@ -51,7 +51,13 @@
 				
 				</TabItem>
 				<TabItem Header="Code Browser">
-				
+					<ae:TextEditor Name="codeBrowser" ShowLineNumbers="True" FontFamily="Consolas" Margin="3" />
+				</TabItem>
+				<TabItem Header="Test">
+					<DockPanel>
+						<Button DockPanel.Dock="Top" Margin="3" Content="Test" Click="Button_Click" />
+						<ae:TextEditor Name="test" ShowLineNumbers="True" FontFamily="Consolas" Margin="3" />
+					</DockPanel>
 				</TabItem>
 			</TabControl>
 		</Grid>

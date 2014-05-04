@@ -29,6 +29,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using ICSharpCode.AvalonEdit.Document;
 using Usalizer.Analysis;
 using Usalizer.TreeNodes;
 
@@ -47,12 +48,23 @@ namespace Usalizer
 		readonly object progressLock = new object();
 		
 		static DelphiAnalysis currentAnalysis;
-
+		
 		public static DelphiAnalysis CurrentAnalysis {
 			get {
 				return currentAnalysis;
 			}
 		}
+		
+		public static void BrowseUnit(DelphiFile file)
+		{
+			Window1 current = Application.Current.MainWindow as Window1;
+			if (current == null)
+				return;
+			
+			current.codeBrowser.Document.Text = File.ReadAllText(file.Location);
+			current.resultsView.SelectedIndex = 2;
+		}
+		
 		void StartClick(object sender, RoutedEventArgs e)
 		{
 			string path = baseDirectory.Text;
@@ -108,11 +120,21 @@ namespace Usalizer
 		{
 			throw new NotImplementedException();
 		}
-
+		
 		void PopulateTreeView(DelphiAnalysis analysis)
 		{
 			resultsTree.Root = new ICSharpCode.TreeView.SharpTreeNode();
 			resultsTree.Root.Children.AddRange(analysis.AllUnits.OrderBy(p => p.Key).Select(p => new DelphiFileTreeNode(p.Value)));
+		}
+		
+		void Button_Click(object sender, System.Windows.RoutedEventArgs e)
+		{
+			using (TextReader reader = new StringReader(test.Document.Text)) {
+				DelphiTokenizer tokenizer = new DelphiTokenizer(reader);
+				Token t;
+				while ((t = tokenizer.Next()).Kind != TokenKind.EOF)
+					Console.WriteLine(t);
+			}
 		}
 	}
 }

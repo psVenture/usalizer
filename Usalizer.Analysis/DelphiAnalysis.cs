@@ -79,8 +79,14 @@ namespace Usalizer.Analysis
 		public void Analyse(CancellationToken cancellation = default(CancellationToken))
 		{
 			#if DEBUG
-			foreach (var f in pasFiles)
-				allUnits.TryAdd(f, MakeFile(Stream(f), f));
+			foreach (var f in pasFiles) {
+				var file = MakeFile(Stream(f), f);
+				if (file == null) {
+					Console.WriteLine(f + " produced no output!");
+					continue;
+				}
+				allUnits.TryAdd(f, file);
+			}
 			#else
 			Parallel.ForEach(pasFiles, f => allUnits.TryAdd(f, MakeFile(Stream(f), f)));
 			#endif
@@ -100,7 +106,7 @@ namespace Usalizer.Analysis
 		{
 			Stack<Tuple<DirectiveKind, string, bool>> openedIfs = new Stack<Tuple<DirectiveKind, string, bool>>();
 			
-			foreach (var token in StreamSingleFile(fileName)) {
+			foreach (var token in StreamSingleFile(fileName).Where(t => t.Kind != TokenKind.Comment)) {
 				if (token.Kind == TokenKind.Directive) {
 					string[] parameters;
 					string symbol;
@@ -150,7 +156,7 @@ namespace Usalizer.Analysis
 							break;
 					}
 				} else {
-					if (openedIfs.Count == 0 || openedIfs.Peek().Item3)
+					if (openedIfs.Count == 0 || openedIfs.All(i => i.Item3))
 						yield return token;
 				}
 			}
@@ -187,6 +193,8 @@ namespace Usalizer.Analysis
 				return DirectiveKind.Error;
 			
 			switch (directive.ToUpperInvariant()) {
+				case "ELSE":
+					return DirectiveKind.Else;
 				case "IFDEF":
 					return DirectiveKind.IfDef;
 				case "IFNDEF":
@@ -209,65 +217,77 @@ namespace Usalizer.Analysis
 		
 		DelphiFile MakeFile(IEnumerable<Token> tokens, string fileName)
 		{
-			DelphiFile unit = null;
-			Console.WriteLine("file: " + fileName);
-			Console.WriteLine(File.ReadAllText(fileName));
+			try {
+				DelphiFile unit = null;
+//				Console.WriteLine("file: " + fileName);
+//			Console.WriteLine(File.ReadAllText(fileName));
 			
-			var implementationUses = new List<UsesClause>();
-			var interfaceUses = new List<UsesClause>();
+				var implementationUses = new List<UsesClause>();
+				var interfaceUses = new List<UsesClause>();
 			
-			Token prev = new Token(TokenKind.EOF);
-			LookFor state = LookFor.Unit;
-			var tokenizer = tokens.GetEnumerator();
+				Token prev = new Token(TokenKind.EOF);
+				LookFor state = LookFor.Unit;
+				var tokenizer = tokens.GetEnumerator();
 			
-			while (tokenizer.MoveNext()) {
-				var t = tokenizer.Current;
-				Console.WriteLine(t);
-				switch (state) {
-					case LookFor.Unit:
-						if (t.Kind == TokenKind.Identifier && prev.IsKeyword("unit")) {
-							unit = new DelphiFile(t.Value, fileName);
-							state = LookFor.InterfaceUses;
-						}
-						break;
-					case LookFor.InterfaceUses:
-						if (t.IsKeyword("uses") && prev.IsKeyword("interface")) {
-							state = LookFor.ImplementationUses;
-							Console.WriteLine("found interface uses!");
-							while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
-								t = tokenizer.Current;
-								if (t.Kind == TokenKind.Identifier)
-									interfaceUses.Add(new UsesClause(unit, t.Value));
+				while (tokenizer.MoveNext()) {
+					var t = tokenizer.Current;
+//				Console.WriteLine(t);
+					switch (state) {
+						case LookFor.Unit:
+							if (t.Kind == TokenKind.Identifier && prev.IsKeyword("unit")) {
+								unit = new DelphiFile(t.Value, fileName);
+								state = LookFor.InterfaceUses;
 							}
-						}
-						break;
-					case LookFor.ImplementationUses:
-						if (t.IsKeyword("uses") && prev.IsKeyword("implementation")) {
-							Console.WriteLine("found implementation uses!");
-							while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
-								t = tokenizer.Current;
-								if (t.Kind == TokenKind.Identifier)
-									implementationUses.Add(new UsesClause(unit, t.Value));
+							break;
+						case LookFor.InterfaceUses:
+							if (t.IsKeyword("uses") && prev.IsKeyword("interface")) {
+								state = LookFor.ImplementationUses;
+//								Console.WriteLine("found interface uses!");
+								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
+									t = tokenizer.Current;
+									if (t.Kind == TokenKind.Identifier)
+										interfaceUses.Add(new UsesClause(unit, t.Value));
+								}
+							} else if (prev.IsKeyword("interface")) {
+								state = LookFor.ImplementationUses;
 							}
-						}
-						break;
+							break;
+						case LookFor.ImplementationUses:
+							if (t.IsKeyword("uses") && prev.IsKeyword("implementation")) {
+//								Console.WriteLine("found implementation uses!");
+								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
+									t = tokenizer.Current;
+									if (t.Kind == TokenKind.Identifier)
+										implementationUses.Add(new UsesClause(unit, t.Value));
+								}
+								goto done;
+							}
+							break;
+					}
+					prev = t;
 				}
-				prev = t;
+				done:
+				progress.Report(Tuple.Create(fileName, 1.0 / pasFiles.Length));
+				if (unit == null)
+					return null;
+				unit.ImplementationUses.AddRange(implementationUses);
+				unit.InterfaceUses.AddRange(interfaceUses);
+				return unit;
+			} catch (Exception ex) {
+				throw new Exception("Error while processing: " + fileName, ex);
 			}
-			progress.Report(Tuple.Create(fileName, 1.0 / pasFiles.Length));
-			if (unit == null)
-				return null;
-			unit.ImplementationUses.AddRange(implementationUses);
-			unit.InterfaceUses.AddRange(interfaceUses);
-			return unit;
 		}
 
 		public DelphiFile ResolveUnitName(string unitName, string inLocation = null)
 		{
 			if (inLocation != null)
 				throw new NotImplementedException();
-			
-			return allUnits.Select(p => p.Value).FirstOrDefault(f => string.Equals(f.UnitName, unitName, StringComparison.OrdinalIgnoreCase));
+			try {
+				return allUnits.Select(p => p.Value).First(f => string.Equals(f.UnitName, unitName, StringComparison.OrdinalIgnoreCase));
+			} catch (InvalidOperationException) {
+				Console.WriteLine(unitName + " not found in Resolve");
+				return null;
+			}
 		}
 
 		public IEnumerable<DelphiFile> FindReferences(string unitName, UsesSection section)

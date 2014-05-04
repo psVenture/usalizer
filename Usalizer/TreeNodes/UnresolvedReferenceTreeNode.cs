@@ -16,33 +16,29 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Linq;
+using ICSharpCode.TreeView;
+using Usalizer.Analysis;
 
-namespace Usalizer.Analysis
+namespace Usalizer.TreeNodes
 {
-	/// <summary>
-	/// [Namespace.]Name [in 'InLocation']
-	/// </summary>
-	public class UsesClause
+	public class UnresolvedReferenceTreeNode : SharpTreeNode
 	{
-		public DelphiFile File { get; private set; }
-		public string Name { get; private set; }
-		public string Namespace { get; private set; }
-		public string InLocation { get; private set; }
-		
-		public UsesClause(DelphiFile file, string name, string @namespace = null, string inLocation = null)
+		UsesClause uses;
+
+		public UnresolvedReferenceTreeNode(UsesClause uses)
 		{
-			if (file == null)
-				throw new ArgumentNullException("file");
-			this.File = file;
-			this.Name = name;
-			this.Namespace = @namespace;
-			this.InLocation = inLocation;
+			if (uses == null)
+				throw new ArgumentNullException("uses");
+			this.uses = uses;
 		}
-		
-		public override string ToString()
-		{
-			return string.Format("[UsesClause Name={0}, Namespace={1}, InLocation={2}]", Name, Namespace, InLocation);
+
+		public override object Text {
+			get {
+				return "(" + uses.Name + ")";
+			}
 		}
 	}
 }
+
 

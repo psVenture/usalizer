@@ -16,33 +16,59 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using ICSharpCode.TreeView;
+using Usalizer.Analysis;
 
-namespace Usalizer.Analysis
+namespace Usalizer.TreeNodes
 {
-	/// <summary>
-	/// [Namespace.]Name [in 'InLocation']
-	/// </summary>
-	public class UsesClause
+	public class UsesTreeNode : SharpTreeNode
 	{
-		public DelphiFile File { get; private set; }
-		public string Name { get; private set; }
-		public string Namespace { get; private set; }
-		public string InLocation { get; private set; }
-		
-		public UsesClause(DelphiFile file, string name, string @namespace = null, string inLocation = null)
+		DelphiFile file;
+
+		UsesSection section;
+
+		public UsesTreeNode(DelphiFile file, UsesSection section)
 		{
 			if (file == null)
 				throw new ArgumentNullException("file");
-			this.File = file;
-			this.Name = name;
-			this.Namespace = @namespace;
-			this.InLocation = inLocation;
+			this.file = file;
+			this.section = section;
+			this.LazyLoading = true;
 		}
-		
-		public override string ToString()
+
+		public override object Text {
+			get {
+				return "uses" + section.GetSectionText();
+			}
+		}
+
+		protected override void LoadChildren()
 		{
-			return string.Format("[UsesClause Name={0}, Namespace={1}, InLocation={2}]", Name, Namespace, InLocation);
+			IEnumerable<UsesClause> source = Enumerable.Empty<UsesClause>();
+			switch (section) {
+				case UsesSection.Both:
+					source = file.InterfaceUses.Concat(file.ImplementationUses);
+					break;
+				case UsesSection.Interface:
+					source = file.InterfaceUses;
+					break;
+				case UsesSection.Implementation:
+					source = file.ImplementationUses;
+					break;
+			}
+			Children.AddRange(source.OrderBy(c => c.Name).Select(c =>  {
+				var resolved = Window1.CurrentAnalysis.ResolveUnitName(c.Name, c.InLocation);
+				SharpTreeNode node;
+				if (resolved == null)
+					node = new UnresolvedReferenceTreeNode(c);
+				else
+					node = new DelphiFileTreeNode(resolved);
+				return node;
+			}));
 		}
 	}
 }
+
 
