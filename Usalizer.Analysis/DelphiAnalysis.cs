@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -41,7 +42,7 @@ namespace Usalizer.Analysis
 		string[] pasFiles;
 		string[] incFiles;
 		string[] dpkFiles;
-		readonly IProgress<Tuple<string, double>> progress;
+		readonly IProgress<Tuple<string, double, bool>> progress;
 		DelphiIncludeResolver resolver;
 		
 		public IDictionary<string, DelphiFile> AllUnits {
@@ -56,7 +57,7 @@ namespace Usalizer.Analysis
 			}
 		}
 		
-		public DelphiAnalysis(string path, string packagePath, string[] symbols, IProgress<Tuple<string, double>> progress)
+		public DelphiAnalysis(string path, string packagePath, string[] symbols, IProgress<Tuple<string, double, bool>> progress)
 		{
 			this.path = path;
 			this.packagePath = packagePath;
@@ -85,17 +86,34 @@ namespace Usalizer.Analysis
 		
 		public void Analyse(CancellationToken cancellation = default(CancellationToken))
 		{
-			#if DEBUG
+			progress.Report(Tuple.Create("Parse .pas files...", 0.0, true));
 			foreach (var f in pasFiles) {
 				AnalyseDelphiFile(f);
 			}
+			progress.Report(Tuple.Create("Parse .dpk files...", 0.0, true));
 			foreach (var p in dpkFiles) {
 				AnalysePackageFile(p);
 			}
-			#else
-			Parallel.ForEach(pasFiles, AnalyseDelphiFile);
-			Parallel.ForEach(dpkFiles, AnalysePackageFile);
-			#endif
+//			foreach (var package in packages) {
+//				progress.Report(Tuple.Create("Build uses lists...", 0.0, true));
+//				foreach (var unit in package.Value.ContainingUnits) {
+//					FindImplicitUses(package.Value, unit.Uses.Select(c => ResolveUnitName(c.Name, c.InLocation)));
+//				}
+//			}
+		}
+		
+		void FindImplicitUses(Package package, IEnumerable<DelphiFile> directReferences)
+		{
+			progress.Report(Tuple.Create("Build uses lists... " + package.PackageName, 1.0 / pasFiles.Length, true));
+			foreach (var unit in directReferences.Where(u => u != null)) {
+				Debug.Assert(unit != null);
+				if (package.ContainingUnits.Contains(unit))
+					continue;
+				if (package.ImplicitUses.Contains(unit))
+					continue;
+				package.ImplicitUses.Add(unit);
+				FindImplicitUses(package, unit.Uses.Select(c => ResolveUnitName(c.Name, c.InLocation)));
+			}
 		}
 		
 		void AnalysePackageFile(string p)
@@ -107,7 +125,7 @@ namespace Usalizer.Analysis
 			}
 			packages.TryAdd(p, package);
 		}
-
+		
 		void AnalyseDelphiFile(string f)
 		{
 			var file = MakeFile(Stream(f), f);
@@ -230,7 +248,7 @@ namespace Usalizer.Analysis
 					return DirectiveKind.Include;
 				case "ENDIF":
 					return DirectiveKind.EndIf;
-			}
+		}
 			return DirectiveKind.Error;
 		}
 		
@@ -286,11 +304,11 @@ namespace Usalizer.Analysis
 								goto done;
 							}
 							break;
-					}
+				}
 					prev = t;
 				}
-			done:
-				progress.Report(Tuple.Create(fileName, 1.0 / pasFiles.Length));
+				done:
+				progress.Report(Tuple.Create(fileName, 1.0 / pasFiles.Length, false));
 				if (unit == null)
 					return null;
 				unit.ImplementationUses.AddRange(implementationUses);
@@ -300,7 +318,7 @@ namespace Usalizer.Analysis
 				throw new Exception("Error while processing: " + fileName, ex);
 			}
 		}
-
+		
 		Package MakePackageFile(IEnumerable<Token> tokens, string fileName)
 		{
 			try {
@@ -334,11 +352,11 @@ namespace Usalizer.Analysis
 								goto done;
 							}
 							break;
-					}
+				}
 					prev = t;
 				}
-			done:
-				progress.Report(Tuple.Create(fileName, 1.0 / pasFiles.Length));
+				done:
+				progress.Report(Tuple.Create(fileName, 1.0 / dpkFiles.Length, false));
 				if (package == null)
 					return null;
 				package.ContainingUnits.AddRange(containingUnits);
@@ -353,7 +371,9 @@ namespace Usalizer.Analysis
 			if (inLocation != null)
 				throw new NotImplementedException();
 			try {
-				return allUnits.Select(p => p.Value).First(f => string.Equals(f.UnitName, unitName, StringComparison.OrdinalIgnoreCase));
+				return allUnits.AsParallel()
+					.Select(p => p.Value)
+					.First(f => string.Equals(f.UnitName, unitName, StringComparison.OrdinalIgnoreCase));
 			} catch (InvalidOperationException) {
 				Console.WriteLine(unitName + " not found in Resolve");
 				return null;
@@ -373,7 +393,7 @@ namespace Usalizer.Analysis
 				case UsesSection.Implementation:
 					source = allUnits.SelectMany(u => u.Value.ImplementationUses);
 					break;
-			}
+		}
 			
 			return source.AsParallel()
 				.Where(c => string.Equals(c.Name, unitName, StringComparison.OrdinalIgnoreCase))

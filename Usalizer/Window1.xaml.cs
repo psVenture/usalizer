@@ -38,7 +38,7 @@ namespace Usalizer
 	/// <summary>
 	/// Interaction logic for Window1.xaml
 	/// </summary>
-	public partial class Window1 : Window, IProgress<Tuple<string, double>>
+	public partial class Window1 : Window, IProgress<Tuple<string, double, bool>>
 	{
 		public Window1()
 		{
@@ -111,13 +111,16 @@ namespace Usalizer
 			progressText.Text = text;
 		}
 		
-		void IProgress<Tuple<string, double>>.Report(Tuple<string, double> value)
+		void IProgress<Tuple<string, double, bool>>.Report(Tuple<string, double, bool> value)
 		{
 			Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)delegate {
 				lock (progressLock) {
 					progress.IsIndeterminate = false;
 					progressText.Text = value.Item1;
-					progress.Value += value.Item2;
+					if (value.Item3)
+						progress.Value = value.Item2;
+					else
+						progress.Value += value.Item2;
 				}
 			});
 		}

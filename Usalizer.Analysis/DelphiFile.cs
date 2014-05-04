@@ -16,6 +16,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace Usalizer.Analysis
@@ -26,6 +27,12 @@ namespace Usalizer.Analysis
 		public string Location { get; private set; }
 		public List<UsesClause> InterfaceUses { get; private set; }
 		public List<UsesClause> ImplementationUses { get; private set; }
+		
+		public IEnumerable<UsesClause> Uses {
+			get {
+				return InterfaceUses.Concat(ImplementationUses);
+			}
+		}
 		
 		public DelphiFile(string unitName, string location)
 		{
@@ -41,12 +48,14 @@ namespace Usalizer.Analysis
 		public string PackageName { get; private set; }
 		public string Location { get; private set; }
 		public List<DelphiFile> ContainingUnits { get; private set; }
+		public List<DelphiFile> ImplicitUses { get; private set; }
 		
 		public Package(string packageName, string location)
 		{
 			this.PackageName = packageName;
 			this.Location = location;
 			this.ContainingUnits = new List<DelphiFile>();
+			this.ImplicitUses = new List<DelphiFile>();
 		}
 	}
 }
