@@ -39,11 +39,13 @@ namespace Usalizer.Analysis
 	public class Package
 	{
 		public string PackageName { get; private set; }
+		public string Location { get; private set; }
 		public List<DelphiFile> ContainingUnits { get; private set; }
 		
-		public Package(string packageName)
+		public Package(string packageName, string location)
 		{
 			this.PackageName = packageName;
+			this.Location = location;
 			this.ContainingUnits = new List<DelphiFile>();
 		}
 	}

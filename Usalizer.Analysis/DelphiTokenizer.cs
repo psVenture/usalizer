@@ -175,11 +175,15 @@ namespace Usalizer.Analysis
 					return true;
 				case "ASM":
 					return true;
+				case "CONTAINS":
+					return true;
 				case "END":
 					return true;
 				case "IMPLEMENTATION":
 					return true;
 				case "INTERFACE":
+					return true;
+				case "PACKAGE":
 					return true;
 				case "UNIT":
 					return true;

@@ -73,6 +73,12 @@ namespace Usalizer
 				return;
 			}
 			
+			string packagePath = packageDir.Text;
+			if (!Directory.Exists(packagePath)) {
+				MessageBox.Show(this, packagePath + " does not exist!");
+				return;
+			}
+			
 			startButton.IsEnabled = false;
 			SetProgressIndeterminate("Preparing analysis...", true);
 			resultsView.Visibility = Visibility.Hidden;
@@ -83,7 +89,7 @@ namespace Usalizer
 			
 			var cancellation = new CancellationTokenSource();
 			
-			currentAnalysis = new DelphiAnalysis(path, symbols, this);
+			currentAnalysis = new DelphiAnalysis(path, packagePath, symbols, this);
 			currentAnalysis.PrepareAnalysis(cancellation.Token)
 				.ContinueWith(t => t.Result.Analyse(cancellation.Token))
 				.ContinueWith(t => {

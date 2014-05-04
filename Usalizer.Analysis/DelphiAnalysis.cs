@@ -34,11 +34,13 @@ namespace Usalizer.Analysis
 	public class DelphiAnalysis
 	{
 		string path;
+		string packagePath;
 		string[] symbols;
 		ConcurrentDictionary<string, DelphiFile> allUnits;
 		ConcurrentDictionary<string, Package> packages;
 		string[] pasFiles;
 		string[] incFiles;
+		string[] dpkFiles;
 		readonly IProgress<Tuple<string, double>> progress;
 		DelphiIncludeResolver resolver;
 		
@@ -54,12 +56,14 @@ namespace Usalizer.Analysis
 			}
 		}
 		
-		public DelphiAnalysis(string path, string[] symbols, IProgress<Tuple<string, double>> progress)
+		public DelphiAnalysis(string path, string packagePath, string[] symbols, IProgress<Tuple<string, double>> progress)
 		{
 			this.path = path;
+			this.packagePath = packagePath;
 			this.symbols = symbols;
 			this.progress = progress;
 			allUnits = new ConcurrentDictionary<string, DelphiFile>();
+			packages = new ConcurrentDictionary<string, Package>();
 		}
 		
 		public Task<DelphiAnalysis> PrepareAnalysis(CancellationToken cancellation = default(CancellationToken))
@@ -71,6 +75,9 @@ namespace Usalizer.Analysis
 				incFiles = new DirectoryInfo(path).EnumerateFiles("*.inc", SearchOption.AllDirectories).Select(f => f.FullName).ToArray();
 				if (cancellation.IsCancellationRequested)
 					throw new OperationCanceledException();
+				dpkFiles = new DirectoryInfo(packagePath).EnumerateFiles("*.dpk", SearchOption.AllDirectories).Select(f => f.FullName).ToArray();
+				if (cancellation.IsCancellationRequested)
+					throw new OperationCanceledException();
 				resolver = new DelphiIncludeResolver(pasFiles, incFiles);
 				return this;
 			});
@@ -80,16 +87,35 @@ namespace Usalizer.Analysis
 		{
 			#if DEBUG
 			foreach (var f in pasFiles) {
-				var file = MakeFile(Stream(f), f);
-				if (file == null) {
-					Console.WriteLine(f + " produced no output!");
-					continue;
-				}
-				allUnits.TryAdd(f, file);
+				AnalyseDelphiFile(f);
+			}
+			foreach (var p in dpkFiles) {
+				AnalysePackageFile(p);
 			}
 			#else
-			Parallel.ForEach(pasFiles, f => allUnits.TryAdd(f, MakeFile(Stream(f), f)));
+			Parallel.ForEach(pasFiles, AnalyseDelphiFile);
+			Parallel.ForEach(dpkFiles, AnalysePackageFile);
 			#endif
+		}
+		
+		void AnalysePackageFile(string p)
+		{
+			var package = MakePackageFile(Stream(p), p);
+			if (package == null) {
+				Console.WriteLine(p + " produced no output!");
+				return;
+			}
+			packages.TryAdd(p, package);
+		}
+
+		void AnalyseDelphiFile(string f)
+		{
+			var file = MakeFile(Stream(f), f);
+			if (file == null) {
+				Console.WriteLine(f + " produced no output!");
+				return;
+			}
+			allUnits.TryAdd(f, file);
 		}
 		
 		IEnumerable<Token> StreamSingleFile(string fileName)
@@ -154,7 +180,7 @@ namespace Usalizer.Analysis
 							if (openedIfs.Count > 0)
 								openedIfs.Pop();
 							break;
-					}
+				}
 				} else {
 					if (openedIfs.Count == 0 || openedIfs.All(i => i.Item3))
 						yield return token;
@@ -210,6 +236,8 @@ namespace Usalizer.Analysis
 		
 		enum LookFor
 		{
+			Package,
+			ContainsUnit,
 			Unit,
 			InterfaceUses,
 			ImplementationUses
@@ -219,8 +247,6 @@ namespace Usalizer.Analysis
 		{
 			try {
 				DelphiFile unit = null;
-//				Console.WriteLine("file: " + fileName);
-//			Console.WriteLine(File.ReadAllText(fileName));
 			
 				var implementationUses = new List<UsesClause>();
 				var interfaceUses = new List<UsesClause>();
@@ -231,7 +257,6 @@ namespace Usalizer.Analysis
 			
 				while (tokenizer.MoveNext()) {
 					var t = tokenizer.Current;
-//				Console.WriteLine(t);
 					switch (state) {
 						case LookFor.Unit:
 							if (t.Kind == TokenKind.Identifier && prev.IsKeyword("unit")) {
@@ -242,7 +267,6 @@ namespace Usalizer.Analysis
 						case LookFor.InterfaceUses:
 							if (t.IsKeyword("uses") && prev.IsKeyword("interface")) {
 								state = LookFor.ImplementationUses;
-//								Console.WriteLine("found interface uses!");
 								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
 									t = tokenizer.Current;
 									if (t.Kind == TokenKind.Identifier)
@@ -254,7 +278,6 @@ namespace Usalizer.Analysis
 							break;
 						case LookFor.ImplementationUses:
 							if (t.IsKeyword("uses") && prev.IsKeyword("implementation")) {
-//								Console.WriteLine("found implementation uses!");
 								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
 									t = tokenizer.Current;
 									if (t.Kind == TokenKind.Identifier)
@@ -266,7 +289,7 @@ namespace Usalizer.Analysis
 					}
 					prev = t;
 				}
-				done:
+			done:
 				progress.Report(Tuple.Create(fileName, 1.0 / pasFiles.Length));
 				if (unit == null)
 					return null;
@@ -278,6 +301,53 @@ namespace Usalizer.Analysis
 			}
 		}
 
+		Package MakePackageFile(IEnumerable<Token> tokens, string fileName)
+		{
+			try {
+				Package package = null;
+			
+				var containingUnits = new List<DelphiFile>();
+			
+				Token prev = new Token(TokenKind.EOF);
+				LookFor state = LookFor.Package;
+				var tokenizer = tokens.GetEnumerator();
+			
+				while (tokenizer.MoveNext()) {
+					var t = tokenizer.Current;
+					switch (state) {
+						case LookFor.Package:
+							if (t.Kind == TokenKind.Identifier && prev.IsKeyword("package")) {
+								package = new Package(t.Value, fileName);
+								state = LookFor.ContainsUnit;
+							}
+							break;
+						case LookFor.ContainsUnit:
+							if (t.IsKeyword("contains")) {
+								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
+									t = tokenizer.Current;
+									if (t.Kind == TokenKind.Identifier) {
+										var unit = ResolveUnitName(t.Value);
+										if (unit != null)
+											containingUnits.Add(unit);
+									}
+								}
+								goto done;
+							}
+							break;
+					}
+					prev = t;
+				}
+			done:
+				progress.Report(Tuple.Create(fileName, 1.0 / pasFiles.Length));
+				if (package == null)
+					return null;
+				package.ContainingUnits.AddRange(containingUnits);
+				return package;
+			} catch (Exception ex) {
+				throw new Exception("Error while processing: " + fileName, ex);
+			}
+		}
+		
 		public DelphiFile ResolveUnitName(string unitName, string inLocation = null)
 		{
 			if (inLocation != null)
@@ -289,7 +359,7 @@ namespace Usalizer.Analysis
 				return null;
 			}
 		}
-
+		
 		public IEnumerable<DelphiFile> FindReferences(string unitName, UsesSection section)
 		{
 			IEnumerable<UsesClause> source = Enumerable.Empty<UsesClause>();
