@@ -24,12 +24,14 @@ namespace Usalizer.Analysis
 	/// </summary>
 	public class UsesClause
 	{
+		public DelphiFile File { get; private set; }
 		public string Name { get; private set; }
 		public string Namespace { get; private set; }
 		public string InLocation { get; private set; }
 		
-		public UsesClause(string name, string @namespace = null, string inLocation = null)
+		public UsesClause(DelphiFile file, string name, string @namespace = null, string inLocation = null)
 		{
+			this.File = file;
 			this.Name = name;
 			this.Namespace = @namespace;
 			this.InLocation = inLocation;

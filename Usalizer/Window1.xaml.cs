@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+﻿// Copyright (c) 2014 Stallinger Michael and Pammer Siegfried
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -30,6 +30,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Usalizer.Analysis;
+using Usalizer.TreeNodes;
 
 namespace Usalizer
 {
@@ -45,6 +46,13 @@ namespace Usalizer
 		
 		readonly object progressLock = new object();
 		
+		static DelphiAnalysis currentAnalysis;
+
+		public static DelphiAnalysis CurrentAnalysis {
+			get {
+				return currentAnalysis;
+			}
+		}
 		void StartClick(object sender, RoutedEventArgs e)
 		{
 			string path = baseDirectory.Text;
@@ -54,7 +62,7 @@ namespace Usalizer
 			}
 			
 			startButton.IsEnabled = false;
-			SetProgress("Preparing analysis...", true);
+			SetProgressIndeterminate("Preparing analysis...", true);
 			resultsView.Visibility = Visibility.Hidden;
 			progressView.Visibility = Visibility.Visible;
 			
@@ -63,13 +71,14 @@ namespace Usalizer
 			
 			var cancellation = new CancellationTokenSource();
 			
-			var analysis = new DelphiAnalysis(path, symbols, this);
-			analysis.PrepareAnalysis(cancellation.Token)
+			currentAnalysis = new DelphiAnalysis(path, symbols, this);
+			currentAnalysis.PrepareAnalysis(cancellation.Token)
 				.ContinueWith(t => t.Result.Analyse(cancellation.Token))
 				.ContinueWith(t => {
 					Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)delegate {
 						if (t.Exception != null)
 							MessageBox.Show(t.Exception.ToString());
+						PopulateTreeView(currentAnalysis);
 						resultsView.Visibility = Visibility.Visible;
 						progressView.Visibility = Visibility.Hidden;
 						startButton.IsEnabled = true;
@@ -77,16 +86,14 @@ namespace Usalizer
 				});
 		}
 		
-		void SetProgress(string text, bool isIndeterminate)
+		void SetProgressIndeterminate(string text, bool isIndeterminate)
 		{
 			progress.IsIndeterminate = isIndeterminate;
 			progress.Value = 0;
 			progressText.Text = text;
 		}
 		
-		#region IProgress implementation
-		
-		public void Report(Tuple<string, double> value)
+		void IProgress<Tuple<string, double>>.Report(Tuple<string, double> value)
 		{
 			Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)delegate {
 				lock (progressLock) {
@@ -97,8 +104,15 @@ namespace Usalizer
 			});
 		}
 		
-		#endregion
+		void TreeViewSearchBoxKeyDown(object sender, KeyEventArgs e)
+		{
+			throw new NotImplementedException();
+		}
+
+		void PopulateTreeView(DelphiAnalysis analysis)
+		{
+			resultsTree.Root = new ICSharpCode.TreeView.SharpTreeNode();
+			resultsTree.Root.Children.AddRange(analysis.AllUnits.OrderBy(p => p.Key).Select(p => new DelphiFileTreeNode(p.Value)));
+		}
 	}
-	
-	
 }

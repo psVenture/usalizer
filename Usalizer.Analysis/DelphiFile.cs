@@ -35,4 +35,16 @@ namespace Usalizer.Analysis
 			this.InterfaceUses = new List<UsesClause>();
 		}
 	}
+	
+	public class Package
+	{
+		public string PackageName { get; private set; }
+		public List<DelphiFile> ContainingUnits { get; private set; }
+		
+		public Package(string packageName)
+		{
+			this.PackageName = packageName;
+			this.ContainingUnits = new List<DelphiFile>();
+		}
+	}
 }

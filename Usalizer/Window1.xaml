@@ -20,6 +20,7 @@
 					<RowDefinition Height="Auto"/>
 					<RowDefinition Height="Auto"/>
 					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="Auto"/>
 				</Grid.RowDefinitions>
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition Width="Auto"/>
@@ -27,8 +28,10 @@
 				</Grid.ColumnDefinitions>
 				<Label Margin="3">Base-Directory:</Label>
 				<TextBox Margin="3" Name="baseDirectory" Text="..\test" Grid.Column="1" />
-				<Label Margin="3" Grid.Row="1">Directives:</Label>
-				<TextBox Margin="3" Name="directives" Grid.Row="1" Grid.Column="1" />
+				<Label Margin="3" Grid.Row="1">Package-Directory:</Label>
+				<TextBox Margin="3" Name="packageDir" Grid.Row="1" Grid.Column="1" />
+				<Label Margin="3" Grid.Row="2">Directives:</Label>
+				<TextBox Margin="3" Name="directives" Grid.Row="2" Grid.Column="1" />
 				<StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center">
 					<Button Content="Start" Name="startButton" Click="StartClick" Margin="5" MinWidth="150" />
 				</StackPanel>
@@ -40,8 +43,8 @@
 			<TabControl Grid.Row="1" Name="resultsView" Visibility="Collapsed">
 				<TabItem Header="Results">
 					<DockPanel>
-						<TextBox DockPanel.Dock="Top" Margin="3" />
-						<tv:SharpTreeView Margin="3"  />
+						<TextBox DockPanel.Dock="Top" Margin="3" KeyDown="TreeViewSearchBoxKeyDown" />
+						<tv:SharpTreeView Margin="3" Name="resultsTree"  />
 					</DockPanel>
 				</TabItem>
 				<TabItem Header="Graph">

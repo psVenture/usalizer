@@ -16,6 +16,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,21 +26,40 @@ using System.Threading.Tasks;
 
 namespace Usalizer.Analysis
 {
+	public enum UsesSection
+	{
+		Both, Interface, Implementation
+	}
+	
 	public class DelphiAnalysis
 	{
 		string path;
 		string[] symbols;
-		Dictionary<string, DelphiFile> allUnits;
+		ConcurrentDictionary<string, DelphiFile> allUnits;
+		ConcurrentDictionary<string, Package> packages;
 		string[] pasFiles;
 		string[] incFiles;
 		readonly IProgress<Tuple<string, double>> progress;
 		DelphiIncludeResolver resolver;
+		
+		public IDictionary<string, DelphiFile> AllUnits {
+			get {
+				return allUnits;
+			}
+		}
+		
+		public IDictionary<string, Package> Packages {
+			get {
+				return packages;
+			}
+		}
 		
 		public DelphiAnalysis(string path, string[] symbols, IProgress<Tuple<string, double>> progress)
 		{
 			this.path = path;
 			this.symbols = symbols;
 			this.progress = progress;
+			allUnits = new ConcurrentDictionary<string, DelphiFile>();
 		}
 		
 		public Task<DelphiAnalysis> PrepareAnalysis(CancellationToken cancellation = default(CancellationToken))
@@ -60,9 +80,9 @@ namespace Usalizer.Analysis
 		{
 			#if DEBUG
 			foreach (var f in pasFiles)
-			MakeFile(Stream(f), f);
+				allUnits.TryAdd(f, MakeFile(Stream(f), f));
 			#else
-			Parallel.ForEach(pasFiles, f => MakeFile(Stream(f, symbols, incFiles, pasFiles), f));
+			Parallel.ForEach(pasFiles, f => allUnits.TryAdd(f, MakeFile(Stream(f), f)));
 			#endif
 		}
 		
@@ -128,9 +148,8 @@ namespace Usalizer.Analysis
 							if (openedIfs.Count > 0)
 								openedIfs.Pop();
 							break;
-				}
-				}
-				else {
+					}
+				} else {
 					if (openedIfs.Count == 0 || openedIfs.Peek().Item3)
 						yield return token;
 				}
@@ -177,7 +196,7 @@ namespace Usalizer.Analysis
 					return DirectiveKind.Include;
 				case "ENDIF":
 					return DirectiveKind.EndIf;
-		}
+			}
 			return DirectiveKind.Error;
 		}
 		
@@ -190,7 +209,7 @@ namespace Usalizer.Analysis
 		
 		DelphiFile MakeFile(IEnumerable<Token> tokens, string fileName)
 		{
-			string unitName = null;
+			DelphiFile unit = null;
 			Console.WriteLine("file: " + fileName);
 			Console.WriteLine(File.ReadAllText(fileName));
 			
@@ -207,7 +226,7 @@ namespace Usalizer.Analysis
 				switch (state) {
 					case LookFor.Unit:
 						if (t.Kind == TokenKind.Identifier && prev.IsKeyword("unit")) {
-							unitName = t.Value;
+							unit = new DelphiFile(t.Value, fileName);
 							state = LookFor.InterfaceUses;
 						}
 						break;
@@ -218,7 +237,7 @@ namespace Usalizer.Analysis
 							while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
 								t = tokenizer.Current;
 								if (t.Kind == TokenKind.Identifier)
-									interfaceUses.Add(new UsesClause(t.Value));
+									interfaceUses.Add(new UsesClause(unit, t.Value));
 							}
 						}
 						break;
@@ -228,26 +247,48 @@ namespace Usalizer.Analysis
 							while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
 								t = tokenizer.Current;
 								if (t.Kind == TokenKind.Identifier)
-									implementationUses.Add(new UsesClause(t.Value));
+									implementationUses.Add(new UsesClause(unit, t.Value));
 							}
 						}
 						break;
-			}
-				switch (t.Kind) {
-					case TokenKind.Identifier:
-						if (prev != null && prev.IsKeyword("unit"))
-							unitName = t.Value;
-						break;
-			}
+				}
 				prev = t;
 			}
 			progress.Report(Tuple.Create(fileName, 1.0 / pasFiles.Length));
-			if (unitName == null)
+			if (unit == null)
 				return null;
-			var file = new DelphiFile(unitName, fileName);
-			file.ImplementationUses.AddRange(implementationUses);
-			file.InterfaceUses.AddRange(interfaceUses);
-			return file;
+			unit.ImplementationUses.AddRange(implementationUses);
+			unit.InterfaceUses.AddRange(interfaceUses);
+			return unit;
+		}
+
+		public DelphiFile ResolveUnitName(string unitName, string inLocation = null)
+		{
+			if (inLocation != null)
+				throw new NotImplementedException();
+			
+			return allUnits.Select(p => p.Value).FirstOrDefault(f => string.Equals(f.UnitName, unitName, StringComparison.OrdinalIgnoreCase));
+		}
+
+		public IEnumerable<DelphiFile> FindReferences(string unitName, UsesSection section)
+		{
+			IEnumerable<UsesClause> source = Enumerable.Empty<UsesClause>();
+			switch (section) {
+				case UsesSection.Both:
+					source = allUnits.SelectMany(u => u.Value.InterfaceUses).Concat(allUnits.SelectMany(u => u.Value.ImplementationUses));
+					break;
+				case UsesSection.Interface:
+					source = allUnits.SelectMany(u => u.Value.InterfaceUses);
+					break;
+				case UsesSection.Implementation:
+					source = allUnits.SelectMany(u => u.Value.ImplementationUses);
+					break;
+			}
+			
+			return source.AsParallel()
+				.Where(c => string.Equals(c.Name, unitName, StringComparison.OrdinalIgnoreCase))
+				.OrderBy(c => c.Name)
+				.Select(c => c.File);
 		}
 	}
 }
