@@ -30,6 +30,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.TreeView;
 using Usalizer.Analysis;
 using Usalizer.TreeNodes;
 
@@ -56,6 +57,16 @@ namespace Usalizer
 		}
 		
 		public static void BrowseUnit(DelphiFile file)
+		{
+			Window1 current = Application.Current.MainWindow as Window1;
+			if (current == null)
+				return;
+			
+			current.codeBrowser.Document.Text = File.ReadAllText(file.Location);
+			current.resultsView.SelectedIndex = 2;
+		}
+		
+		public static void BrowseUnit(Package file)
 		{
 			Window1 current = Application.Current.MainWindow as Window1;
 			if (current == null)
@@ -96,7 +107,6 @@ namespace Usalizer
 					Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)delegate {
 						if (t.Exception != null)
 							MessageBox.Show(t.Exception.ToString());
-						PopulateTreeView(currentAnalysis);
 						resultsView.Visibility = Visibility.Visible;
 						progressView.Visibility = Visibility.Hidden;
 						startButton.IsEnabled = true;
@@ -127,13 +137,36 @@ namespace Usalizer
 		
 		void TreeViewSearchBoxKeyDown(object sender, KeyEventArgs e)
 		{
-			throw new NotImplementedException();
-		}
-		
-		void PopulateTreeView(DelphiAnalysis analysis)
-		{
-			resultsTree.Root = new ICSharpCode.TreeView.SharpTreeNode();
-			resultsTree.Root.Children.AddRange(analysis.AllUnits.OrderBy(p => p.Key).Select(p => new DelphiFileTreeNode(p.Value)));
+			if (e.Key != Key.Enter) return;
+			var root = new SharpTreeNode();
+			foreach (var result in currentAnalysis.FindPartialName(((TextBox)sender).Text)) {
+				Dictionary<DelphiFile, DelphiFile> parent;
+				var endPoints = currentAnalysis.FindContainingPackages(result, out parent);
+				var resultTreeNode = new ResultTreeNode(result, true);
+				foreach (var endPoint in endPoints) {
+					foreach (var package in endPoint.DirectlyInPackages) {
+						var p = package;
+						var packageNode = resultTreeNode.Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
+						if (packageNode == null) {
+							packageNode = new PackageTreeNode(package);
+							resultTreeNode.Children.Add(packageNode);
+						}
+						var node = new ResultTreeNode(endPoint);
+						var currentFile = endPoint;
+						DelphiFile parentFile;
+						while (parent.TryGetValue(currentFile, out parentFile)) {
+							currentFile = parentFile;
+							var newNode = new ResultTreeNode(currentFile);
+							newNode.Children.Add(node);
+							node = newNode;
+						}
+						node.FirstLevel = true;
+						packageNode.Children.Add(node);
+					}
+				}
+				root.Children.Add(resultTreeNode);
+			}
+			resultsTree.Root = root;
 		}
 		
 		void Button_Click(object sender, System.Windows.RoutedEventArgs e)

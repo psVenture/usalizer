@@ -24,7 +24,9 @@ namespace Usalizer.Analysis
 	/// </summary>
 	public class UsesClause
 	{
-		public DelphiFile File { get; private set; }
+		public DelphiFile ParentFile { get; private set; }
+		public DelphiFile TargetFile { get; private set; }
+		
 		public string Name { get; private set; }
 		public string Namespace { get; private set; }
 		public string InLocation { get; private set; }
@@ -33,10 +35,20 @@ namespace Usalizer.Analysis
 		{
 			if (file == null)
 				throw new ArgumentNullException("file");
-			this.File = file;
+			this.ParentFile = file;
 			this.Name = name;
 			this.Namespace = @namespace;
 			this.InLocation = inLocation;
+		}
+		
+		public void Resolve(DelphiAnalysis container)
+		{
+			TargetFile = container.ResolveUnitName(Name);
+			// TODO : split 'Resolve' and add to list and parallelise
+			if (TargetFile != null) {
+				TargetFile.UsedByFiles.Add(ParentFile);
+				ParentFile.UsesFiles.Add(TargetFile);
+			}
 		}
 		
 		public override string ToString()

@@ -48,7 +48,7 @@ namespace Usalizer.Analysis
 					if (next == (int)'*') {
 						reader.Read();
 						if (reader.Peek() == (int)'$')
-							return PreprocessorDirecive('*');
+							return PreprocessorDirective('*');
 						return Comment('*');
 					}
 					if (next == (int)'.') {
@@ -60,7 +60,7 @@ namespace Usalizer.Analysis
 					return new Token(TokenKind.CloseParens);
 				case '{':
 					if (reader.Peek() == (int)'$')
-						return PreprocessorDirecive('{');
+						return PreprocessorDirective('{');
 					return Comment('{');
 				case ';':
 					return new Token(TokenKind.Semicolon);
@@ -116,7 +116,7 @@ namespace Usalizer.Analysis
 			}
 		}
 		
-		Token PreprocessorDirecive(char ch)
+		Token PreprocessorDirective(char ch)
 		{
 			reader.Read(); // skip $
 			StringBuilder sb = new StringBuilder();

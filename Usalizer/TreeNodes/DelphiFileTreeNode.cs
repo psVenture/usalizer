@@ -46,6 +46,65 @@ namespace Usalizer.TreeNodes
 		}
 	}
 	
+	public class ResultTreeNode : SharpTreeNode
+	{
+		DelphiFile file;
+		bool firstLevel;
+
+		public bool FirstLevel {
+			get {
+				return firstLevel;
+			}
+			set {
+				firstLevel = value;
+			}
+		}
+		
+		public ResultTreeNode(DelphiFile file, bool firstLevel = false)
+		{
+			if (file == null)
+				throw new ArgumentNullException("file");
+			this.file = file;
+			this.firstLevel = firstLevel;
+		}
+		
+		public override object Text {
+			get { return (firstLevel ? "" : "used by ") + file.UnitName; }
+		}
+		
+		public override void ActivateItem(System.Windows.RoutedEventArgs e)
+		{
+			Window1.BrowseUnit(file);
+		}
+	}
+	
+	public class PackageTreeNode : SharpTreeNode
+	{
+		Package package;
+
+		public PackageTreeNode(Package package)
+		{
+			if (package == null)
+				throw new ArgumentNullException("package");
+			this.package = package;
+		}
+		
+		public override object Text {
+			get { return "Package " + package.PackageName; }
+		}
+
+		public Package Package {
+			get {
+				return package;
+			}
+		}
+		
+		public override void ActivateItem(System.Windows.RoutedEventArgs e)
+		{
+			Window1.BrowseUnit(package);
+		}
+	}
+	
 	static class Utils
 	{
 		public static string GetSectionText(this UsesSection section)

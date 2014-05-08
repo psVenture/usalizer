@@ -58,6 +58,7 @@
     <Compile Include="DelphiTokenizer.cs" />
     <Compile Include="DelphiIncludeResolver.cs" />
     <Compile Include="DelphiFile.cs" />
+    <Compile Include="MultiDictionary.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Token.cs" />
     <Compile Include="UsesClause.cs" />

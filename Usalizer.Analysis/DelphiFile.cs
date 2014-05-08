@@ -28,6 +28,10 @@ namespace Usalizer.Analysis
 		public List<UsesClause> InterfaceUses { get; private set; }
 		public List<UsesClause> ImplementationUses { get; private set; }
 		
+		public List<DelphiFile> UsesFiles { get; private set; }
+		public List<DelphiFile> UsedByFiles { get; private set; }
+		public List<Package> DirectlyInPackages { get; private set; }
+		
 		public IEnumerable<UsesClause> Uses {
 			get {
 				return InterfaceUses.Concat(ImplementationUses);
@@ -40,6 +44,9 @@ namespace Usalizer.Analysis
 			this.Location = location;
 			this.ImplementationUses = new List<UsesClause>();
 			this.InterfaceUses = new List<UsesClause>();
+			this.UsedByFiles = new List<DelphiFile>();
+			this.UsesFiles = new List<DelphiFile>();
+			this.DirectlyInPackages = new List<Package>();
 		}
 	}
 	
