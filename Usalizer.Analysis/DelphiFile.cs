@@ -48,6 +48,11 @@ namespace Usalizer.Analysis
 			this.UsesFiles = new List<DelphiFile>();
 			this.DirectlyInPackages = new List<Package>();
 		}
+		
+		public override string ToString()
+		{
+			return string.Format("[DelphiFile UnitName={0}, Location={1}]", UnitName, Location);
+		}
 	}
 	
 	public class Package
@@ -63,6 +68,11 @@ namespace Usalizer.Analysis
 			this.Location = location;
 			this.ContainingUnits = new List<DelphiFile>();
 			this.ImplicitUses = new List<DelphiFile>();
+		}
+		
+		public override string ToString()
+		{
+			return string.Format("[Package PackageName={0}, Location={1}]", PackageName, Location);
 		}
 	}
 }

@@ -104,14 +104,14 @@ namespace Usalizer
 			currentAnalysis.PrepareAnalysis(cancellation.Token)
 				.ContinueWith(t => t.Result.Analyse(cancellation.Token))
 				.ContinueWith(t => {
-					Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)delegate {
-						if (t.Exception != null)
-							MessageBox.Show(t.Exception.ToString());
-						resultsView.Visibility = Visibility.Visible;
-						progressView.Visibility = Visibility.Hidden;
-						startButton.IsEnabled = true;
-					});
-				});
+				              	Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)delegate {
+				              	                       	if (t.Exception != null)
+				              	                       		MessageBox.Show(t.Exception.ToString());
+				              	                       	resultsView.Visibility = Visibility.Visible;
+				              	                       	progressView.Visibility = Visibility.Hidden;
+				              	                       	startButton.IsEnabled = true;
+				              	                       });
+				              });
 		}
 		
 		void SetProgressIndeterminate(string text, bool isIndeterminate)
@@ -124,52 +124,50 @@ namespace Usalizer
 		void IProgress<Tuple<string, double, bool>>.Report(Tuple<string, double, bool> value)
 		{
 			Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)delegate {
-				lock (progressLock) {
-					progress.IsIndeterminate = false;
-					progressText.Text = value.Item1;
-					if (value.Item3)
-						progress.Value = value.Item2;
-					else
-						progress.Value += value.Item2;
+			                       	lock (progressLock) {
+			                       		progress.IsIndeterminate = false;
+			                       		progressText.Text = value.Item1;
+			                       		if (value.Item3)
+			                       			progress.Value = value.Item2;
+			                       		else
+			                       			progress.Value += value.Item2;
+			                       	}
+			                       });
+		}
+
+		void FilterNodes(string text)
+		{
+			var root = new SharpTreeNode();
+			try {
+				foreach (var result in currentAnalysis.FindPartialName(text)) {
+					Dictionary<DelphiFile, DelphiFile> parent;
+					var endPoints = currentAnalysis.FindContainingPackages(result, out parent);
+					var resultTreeNode = new ResultTreeNode(result);
+					foreach (var endPoint in endPoints) {
+						foreach (var package in endPoint.DirectlyInPackages) {
+							var p = package;
+							var packageNode = resultTreeNode.Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
+							if (packageNode == null) {
+								packageNode = new PackageTreeNode(package);
+								resultTreeNode.Children.Add(packageNode);
+							}
+							packageNode.Results.Add(new ResultInfo { endPoint = endPoint, parent = parent });
+						}
+					}
+					root.Children.Add(resultTreeNode);
 				}
-			});
+			} finally {
+				resultsTree.Root = root;
+			}
 		}
 		
 		void TreeViewSearchBoxKeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.Key != Key.Enter) return;
-			var root = new SharpTreeNode();
-			foreach (var result in currentAnalysis.FindPartialName(((TextBox)sender).Text)) {
-				Dictionary<DelphiFile, DelphiFile> parent;
-				var endPoints = currentAnalysis.FindContainingPackages(result, out parent);
-				var resultTreeNode = new ResultTreeNode(result, true);
-				foreach (var endPoint in endPoints) {
-					foreach (var package in endPoint.DirectlyInPackages) {
-						var p = package;
-						var packageNode = resultTreeNode.Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
-						if (packageNode == null) {
-							packageNode = new PackageTreeNode(package);
-							resultTreeNode.Children.Add(packageNode);
-						}
-						var node = new ResultTreeNode(endPoint);
-						var currentFile = endPoint;
-						DelphiFile parentFile;
-						while (parent.TryGetValue(currentFile, out parentFile)) {
-							currentFile = parentFile;
-							var newNode = new ResultTreeNode(currentFile);
-							newNode.Children.Add(node);
-							node = newNode;
-						}
-						node.FirstLevel = true;
-						packageNode.Children.Add(node);
-					}
-				}
-				root.Children.Add(resultTreeNode);
-			}
-			resultsTree.Root = root;
+			FilterNodes(((TextBox)sender).Text);
 		}
 		
-		void Button_Click(object sender, System.Windows.RoutedEventArgs e)
+		void ParseTextClick(object sender, System.Windows.RoutedEventArgs e)
 		{
 			using (TextReader reader = new StringReader(test.Document.Text)) {
 				DelphiTokenizer tokenizer = new DelphiTokenizer(reader);
@@ -177,6 +175,11 @@ namespace Usalizer
 				while ((t = tokenizer.Next()).Kind != TokenKind.EOF)
 					Console.WriteLine(t);
 			}
+		}
+		
+		void SearchClick(object sender, System.Windows.RoutedEventArgs e)
+		{
+			FilterNodes(searchText.Text);
 		}
 	}
 }

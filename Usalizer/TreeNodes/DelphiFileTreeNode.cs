@@ -16,6 +16,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ICSharpCode.TreeView;
 using Usalizer.Analysis;
@@ -49,27 +50,16 @@ namespace Usalizer.TreeNodes
 	public class ResultTreeNode : SharpTreeNode
 	{
 		DelphiFile file;
-		bool firstLevel;
-
-		public bool FirstLevel {
-			get {
-				return firstLevel;
-			}
-			set {
-				firstLevel = value;
-			}
-		}
 		
-		public ResultTreeNode(DelphiFile file, bool firstLevel = false)
+		public ResultTreeNode(DelphiFile file)
 		{
 			if (file == null)
 				throw new ArgumentNullException("file");
 			this.file = file;
-			this.firstLevel = firstLevel;
 		}
 		
 		public override object Text {
-			get { return (firstLevel ? "" : "used by ") + file.UnitName; }
+			get { return file.UnitName; }
 		}
 		
 		public override void ActivateItem(System.Windows.RoutedEventArgs e)
@@ -78,19 +68,79 @@ namespace Usalizer.TreeNodes
 		}
 	}
 	
+	public class PathTreeNode : SharpTreeNode
+	{
+		readonly DelphiFile[] path;
+		readonly int current;
+		
+		public PathTreeNode(DelphiFile[] path, int current)
+		{
+			if (path == null)
+				throw new ArgumentNullException("path");
+			if (path.Length <= current)
+				throw new ArgumentException();
+			this.path = path;
+			this.current = current;
+			this.LazyLoading = true;
+		}
+		
+		public override object Text {
+			get { return (current > 0 ? "used by " : "") + path[current].UnitName + (current == 0 ? " (directly in Package)" : ""); }
+		}
+		
+		protected override void LoadChildren()
+		{
+			Children.Add(new PathTreeNode(path, current + 1));
+		}
+		
+		public override void ActivateItem(System.Windows.RoutedEventArgs e)
+		{
+			Window1.BrowseUnit(path[current]);
+		}
+	}
+	
+	public class ResultInfo
+	{
+		public DelphiFile endPoint;
+		public Dictionary<DelphiFile, DelphiFile> parent;
+	}
+	
 	public class PackageTreeNode : SharpTreeNode
 	{
 		Package package;
+		List<ResultInfo> results = new List<ResultInfo>();
 
+		public List<ResultInfo> Results {
+			get {
+				return results;
+			}
+		}
+		
 		public PackageTreeNode(Package package)
 		{
 			if (package == null)
 				throw new ArgumentNullException("package");
 			this.package = package;
+			LazyLoading = true;
 		}
 		
 		public override object Text {
 			get { return "Package " + package.PackageName; }
+		}
+
+		protected override void LoadChildren()
+		{
+			foreach (var result in results) {
+				List<DelphiFile> path = new List<DelphiFile>();
+				var currentFile = result.endPoint;
+				DelphiFile parentFile;
+				path.Add(currentFile);
+				while (result.parent.TryGetValue(currentFile, out parentFile)) {
+					currentFile = parentFile;
+					path.Add(currentFile);
+				}
+				Children.Add(new PathTreeNode(path.ToArray(), 0));
+			}
 		}
 
 		public Package Package {

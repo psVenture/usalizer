@@ -106,6 +106,9 @@ namespace Usalizer.Analysis
 			var endPoints = new List<DelphiFile>();
 			parentMapping = new Dictionary<DelphiFile, DelphiFile>();
 			
+			if (unit.DirectlyInPackages.Count > 0)
+				endPoints.Add(unit);
+			
 			foreach (var u in unit.UsedByFiles) {
 				if (parentMapping.ContainsKey(u)) continue;
 				parentMapping.Add(u, unit);

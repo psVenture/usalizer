@@ -43,8 +43,17 @@
 			<TabControl Grid.Row="1" Name="resultsView" Visibility="Collapsed">
 				<TabItem Header="Results">
 					<DockPanel>
-						<TextBox DockPanel.Dock="Top" Margin="3" KeyDown="TreeViewSearchBoxKeyDown" />
-						<tv:SharpTreeView Margin="3" Name="resultsTree"  />
+						<Grid DockPanel.Dock="Top">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="Auto" />
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
+							<Label Margin="3">Unit-Name:</Label>
+							<TextBox Margin="3" Grid.Column="1" Name="searchText" KeyDown="TreeViewSearchBoxKeyDown" />
+							<Button Margin="5" Grid.Column="2" Click="SearchClick">Search</Button>
+						</Grid>
+						<tv:SharpTreeView Margin="3" Name="resultsTree" />
 					</DockPanel>
 				</TabItem>
 				<TabItem Header="Graph">
@@ -55,7 +64,7 @@
 				</TabItem>
 				<TabItem Header="Test">
 					<DockPanel>
-						<Button DockPanel.Dock="Top" Margin="3" Content="Test" Click="Button_Click" />
+						<Button DockPanel.Dock="Top" Margin="3" Content="Test" Click="ParseTextClick" />
 						<ae:TextEditor Name="test" ShowLineNumbers="True" FontFamily="Consolas" Margin="3" />
 					</DockPanel>
 				</TabItem>
