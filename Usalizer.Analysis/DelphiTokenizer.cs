@@ -74,6 +74,8 @@ namespace Usalizer.Analysis
 					if (reader.Peek() == (int)'/')
 						return Comment('/');
 					return new Token(TokenKind.Divide);
+				case '\'':
+					return DelphiString();
 				default:
 					if (char.IsLetter(ch)) {
 						string identifier = Identifier(ch);
@@ -84,6 +86,26 @@ namespace Usalizer.Analysis
 					}
 					return new Token(TokenKind.Any);
 			}
+		}
+
+		Token DelphiString()
+		{
+			StringBuilder sb = new StringBuilder();
+			int val;
+			while ((val = reader.Read()) > -1) {
+				if (val == (int)'\'') {
+					int next = reader.Peek();
+					if (next == (int)'\'') {
+						sb.Append('\'');
+						reader.Read();
+					} else {
+						break;
+					}
+				} else {
+					sb.Append((char)val);
+				}
+			}
+			return new Token(TokenKind.StringLiteral, sb.ToString());
 		}
 		
 		Token Comment(char c)
@@ -191,7 +213,7 @@ namespace Usalizer.Analysis
 					return true;
 				case "USES":
 					return true;
-		}
+			}
 			return false;
 		}
 	}

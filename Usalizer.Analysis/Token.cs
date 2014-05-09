@@ -70,7 +70,7 @@ namespace Usalizer.Analysis
 		Directive,
 		Identifier,
 		Number,
-		StringLinteral,
+		StringLiteral,
 		CharLiteral,
 		Keyword,
 		OpenParens,

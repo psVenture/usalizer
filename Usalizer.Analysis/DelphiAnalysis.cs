@@ -137,7 +137,7 @@ namespace Usalizer.Analysis
 		
 		void AnalysePackageFile(string p)
 		{
-			var package = MakePackageFile(Stream(p), p);
+			var package = MakePackageFile(DelphiTokenStream.Stream(p, resolver, symbols), p);
 			if (package == null) {
 				return;
 			}
@@ -148,129 +148,13 @@ namespace Usalizer.Analysis
 		
 		void AnalyseDelphiFile(string f)
 		{
-			var file = MakeFile(Stream(f), f);
+			var file = MakeFile(DelphiTokenStream.Stream(f, resolver, symbols), f);
 			if (file == null) {
 				return;
 			}
 			lock (allUnits) {
 				allUnits.Add(file.UnitName, file);
 			}
-		}
-		
-		IEnumerable<Token> StreamSingleFile(string fileName)
-		{
-			using (StreamReader reader = new StreamReader(fileName)) {
-				DelphiTokenizer tokenizer = new DelphiTokenizer(reader);
-				Token t;
-				while ((t = tokenizer.Next()).Kind != TokenKind.EOF)
-					yield return t;
-			}
-		}
-		
-		IEnumerable<Token> Stream(string fileName)
-		{
-			Stack<Tuple<DirectiveKind, string, bool>> openedIfs = new Stack<Tuple<DirectiveKind, string, bool>>();
-			
-			foreach (var token in StreamSingleFile(fileName).Where(t => t.Kind != TokenKind.Comment)) {
-				if (token.Kind == TokenKind.Directive) {
-					string[] parameters;
-					string symbol;
-					var directiveKind = ParseDirective(token.Value, out parameters);
-					switch (directiveKind) {
-						case DirectiveKind.Include:
-							// possible stack overflow: optimize!
-							string fileNamePart = parameters.FirstOrDefault();
-							if (string.IsNullOrWhiteSpace(fileNamePart))
-								break;
-							string fullName = resolver.ResolveFileName(fileNamePart, fileName);
-							if (fullName == null)
-								break;
-							foreach (var nestedToken in Stream(fullName)) {
-								yield return nestedToken;
-							}
-							break;
-						case DirectiveKind.IfDef:
-							symbol = parameters.FirstOrDefault();
-							if (!string.IsNullOrWhiteSpace(symbol) && symbol[0] == '!') {
-								bool include = !symbols.Contains(symbol.Substring(1));
-								openedIfs.Push(Tuple.Create(DirectiveKind.IfNDef, symbol.Substring(1), include));
-							} else {
-								bool include = symbols.Contains(symbol);
-								openedIfs.Push(Tuple.Create(DirectiveKind.IfDef, symbol, include));
-							}
-							break;
-						case DirectiveKind.IfNDef:
-							symbol = parameters.FirstOrDefault();
-							if (!string.IsNullOrWhiteSpace(symbol) && symbol[0] == '!') {
-								bool include = symbols.Contains(symbol.Substring(1));
-								openedIfs.Push(Tuple.Create(DirectiveKind.IfDef, symbol.Substring(1), include));
-							} else {
-								bool include = !symbols.Contains(symbol);
-								openedIfs.Push(Tuple.Create(DirectiveKind.IfNDef, symbol, include));
-							}
-							break;
-						case DirectiveKind.Else:
-							if (openedIfs.Count > 0) {
-								var old = openedIfs.Pop();
-								openedIfs.Push(Tuple.Create(old.Item1, old.Item2, !old.Item3));
-							}
-							break;
-						case DirectiveKind.EndIf:
-							if (openedIfs.Count > 0)
-								openedIfs.Pop();
-							break;
-					}
-				} else {
-					if (openedIfs.Count == 0 || openedIfs.All(i => i.Item3))
-						yield return token;
-				}
-			}
-		}
-		
-		DirectiveKind ParseDirective(string value, out string[] parameters)
-		{
-			var list = new List<string>();
-			StringBuilder sb = new StringBuilder();
-			
-			bool inString = false;
-			for (int i = 0; i < value.Length; i++) {
-				var ch = value[i];
-				if (ch == '\'') {
-					if (inString && i + 1 < value.Length && value[i + 1] == '\'')
-						sb.Append('\'');
-					else {
-						inString = !inString;
-						list.Add(sb.ToString());
-						sb.Clear();
-					}
-				} else if (char.IsWhiteSpace(ch) && !inString) {
-					list.Add(sb.ToString());
-					sb.Clear();
-				} else {
-					sb.Append(ch);
-				}
-			}
-			list.Add(sb.ToString());
-			
-			string directive = list.FirstOrDefault();
-			parameters = list.Skip(1).ToArray();
-			if (string.IsNullOrEmpty(directive))
-				return DirectiveKind.Error;
-			
-			switch (directive.ToUpperInvariant()) {
-				case "ELSE":
-					return DirectiveKind.Else;
-				case "IFDEF":
-					return DirectiveKind.IfDef;
-				case "IFNDEF":
-					return DirectiveKind.IfNDef;
-				case "I":
-				case "INCLUDE":
-					return DirectiveKind.Include;
-				case "ENDIF":
-					return DirectiveKind.EndIf;
-			}
-			return DirectiveKind.Error;
 		}
 		
 		enum LookFor
