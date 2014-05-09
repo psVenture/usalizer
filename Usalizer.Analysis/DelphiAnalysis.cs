@@ -84,9 +84,7 @@ namespace Usalizer.Analysis
 		public void Analyse(CancellationToken cancellation = default(CancellationToken))
 		{
 			progress.Report(Tuple.Create("Parse .pas files...", 0.0, true));
-			foreach (var f in pasFiles) {
-				AnalyseDelphiFile(f);
-			}
+			Parallel.ForEach(pasFiles, AnalyseDelphiFile);
 			progress.Report(Tuple.Create("Parse .dpk files...", 0.0, true));
 			foreach (var p in dpkFiles) {
 				AnalysePackageFile(p);
