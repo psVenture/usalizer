@@ -174,16 +174,6 @@ namespace Usalizer
 				FilterNodes(((TextBox)sender).Text);
 		}
 		
-		void ParseTextClick(object sender, System.Windows.RoutedEventArgs e)
-		{
-			using (TextReader reader = new StringReader(test.Document.Text)) {
-				DelphiTokenizer tokenizer = new DelphiTokenizer(reader);
-				Token t;
-				while ((t = tokenizer.Next()).Kind != TokenKind.EOF)
-					Console.WriteLine(t);
-			}
-		}
-		
 		void SearchClick(object sender, System.Windows.RoutedEventArgs e)
 		{
 			FilterNodes(searchText.Text);
