@@ -10,6 +10,29 @@
 			
 			</MenuItem>
 		</Menu>
+		<StatusBar DockPanel.Dock="Bottom">
+			<StatusBar.ItemsPanel>
+				<ItemsPanelTemplate>
+					<Grid>
+						<Grid.RowDefinitions>
+							<RowDefinition Height="Auto"/>
+						</Grid.RowDefinitions>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*"/>
+							<ColumnDefinition Width="Auto"/>
+							<ColumnDefinition Width="Auto"/>
+							<ColumnDefinition Width="Auto"/>
+							<ColumnDefinition Width="Auto"/>
+						</Grid.ColumnDefinitions>
+					</Grid>
+				</ItemsPanelTemplate>
+			</StatusBar.ItemsPanel>
+			<StatusBarItem Margin="3" Content="" />
+			<Separator Grid.Column="1" Width="1" />
+			<StatusBarItem Margin="3" Grid.Column="2" Name="unitCount" />
+			<Separator Grid.Column="3" Width="1" />
+			<StatusBarItem Margin="3" Grid.Column="4" Name="packageCount" />
+		</StatusBar>
 		<Grid>
 			<Grid.RowDefinitions>
 				<RowDefinition Height="Auto"/>
@@ -27,9 +50,9 @@
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
 				<Label Margin="3">Base-Directory:</Label>
-				<TextBox Margin="3" Name="baseDirectory" Text="..\test\source" Grid.Column="1" />
+				<TextBox Margin="3" Name="baseDirectory" Text="C:\work\Trunk\Sourcen" Grid.Column="1" />
 				<Label Margin="3" Grid.Row="1">Package-Directory:</Label>
-				<TextBox Margin="3" Name="packageDir" Text="..\test\packages" Grid.Row="1" Grid.Column="1" />
+				<TextBox Margin="3" Name="packageDir" Text="C:\work\MyProject\BMDPackages\XE4" Grid.Row="1" Grid.Column="1" />
 				<Label Margin="3" Grid.Row="2">Directives:</Label>
 				<TextBox Margin="3" Name="directives" Grid.Row="2" Grid.Column="1" />
 				<StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center">

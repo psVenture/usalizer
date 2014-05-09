@@ -109,6 +109,8 @@ namespace Usalizer
 				              	                       		MessageBox.Show(t.Exception.ToString());
 				              	                       	resultsView.Visibility = Visibility.Visible;
 				              	                       	progressView.Visibility = Visibility.Hidden;
+				              	                       	unitCount.Content = "Units: " + currentAnalysis.UnitCount;
+				              	                       	packageCount.Content = "Packages: " + currentAnalysis.PackageCount;
 				              	                       	startButton.IsEnabled = true;
 				              	                       });
 				              });
@@ -142,7 +144,7 @@ namespace Usalizer
 				foreach (var result in currentAnalysis.FindPartialName(text)) {
 					Dictionary<DelphiFile, DelphiFile> parent;
 					var endPoints = currentAnalysis.FindContainingPackages(result, out parent);
-					var resultTreeNode = new ResultTreeNode(result);
+					var resultTreeNode = new DelphiFileTreeNode(result);
 					foreach (var endPoint in endPoints) {
 						foreach (var package in endPoint.DirectlyInPackages) {
 							var p = package;
@@ -155,6 +157,9 @@ namespace Usalizer
 						}
 					}
 					root.Children.Add(resultTreeNode);
+				}
+				if (root.Children.Count == 0) {
+					root.Children.Add(new NoResultTreeNode(text));
 				}
 			} finally {
 				resultsTree.Root = root;

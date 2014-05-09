@@ -45,6 +45,14 @@ namespace Usalizer.Analysis
 		readonly IProgress<Tuple<string, double, bool>> progress;
 		DelphiIncludeResolver resolver;
 		
+		public int UnitCount {
+			get { return allUnits.Count; }
+		}
+		
+		public int PackageCount {
+			get { return packages.Count; }
+		}
+		
 		public DelphiAnalysis(string path, string packagePath, string[] symbols, IProgress<Tuple<string, double, bool>> progress)
 		{
 			this.path = path;

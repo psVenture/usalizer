@@ -17,6 +17,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using ICSharpCode.TreeView;
 using Usalizer.Analysis;
@@ -35,6 +36,7 @@ namespace Usalizer.TreeNodes
 			
 			Children.Add(new UsesTreeNode(file, UsesSection.Both));
 			Children.Add(new UsedByTreeNode(file, UsesSection.Both));
+			Children.Add(new DirectlyInPackageTreeNode(file));
 		}
 		
 		public override object Text {
@@ -47,31 +49,51 @@ namespace Usalizer.TreeNodes
 		}
 	}
 	
-	public class ResultTreeNode : SharpTreeNode
+	public class DirectlyInPackageTreeNode : SharpTreeNode
 	{
 		DelphiFile file;
 		
-		public ResultTreeNode(DelphiFile file)
+		public DirectlyInPackageTreeNode(DelphiFile file)
 		{
 			if (file == null)
 				throw new ArgumentNullException("file");
 			this.file = file;
+			this.LazyLoading = true;
 		}
 		
 		public override object Text {
-			get { return file.UnitName; }
+			get { return "directly in package"; }
 		}
 		
-		public override void ActivateItem(System.Windows.RoutedEventArgs e)
+		protected override void LoadChildren()
 		{
-			Window1.BrowseUnit(file);
+			foreach (var p in file.DirectlyInPackages) {
+				Children.Add(new PackageTreeNode(p));
+			}
+		}
+	}
+	
+	public class NoResultTreeNode : SharpTreeNode
+	{
+		string text;
+		
+		public NoResultTreeNode(string text)
+		{
+			this.text = text;
+		}
+		
+		public override object Text {
+			get {
+				return "Search term '" + text + "' yielded no results!";
+			}
 		}
 	}
 	
 	public class PathTreeNode : SharpTreeNode
 	{
-		readonly DelphiFile[] path;
+		readonly List<DelphiFile[]> paths = new List<DelphiFile[]>();
 		readonly int current;
+		readonly DelphiFile node;
 		
 		public PathTreeNode(DelphiFile[] path, int current)
 		{
@@ -79,23 +101,71 @@ namespace Usalizer.TreeNodes
 				throw new ArgumentNullException("path");
 			if (path.Length <= current)
 				throw new ArgumentException();
-			this.path = path;
+			Debug.Assert(current > 0);
+			this.paths.Add(path);
 			this.current = current;
-			this.LazyLoading = true;
+			this.node = path[current];
+			this.LazyLoading = current < path.Length - 1;
 		}
 		
 		public override object Text {
-			get { return (current > 0 ? "used by " : "") + path[current].UnitName + (current == 0 ? " (directly in Package)" : ""); }
+			get { return (current > 0 ? "used by " : "") + node.UnitName + (paths.Any(path => current == path.Length - 1) ? " (directly in package)" : ""); }
+		}
+
+		public DelphiFile Node {
+			get {
+				return node;
+			}
+		}
+		
+		void PrintPath(DelphiFile[] path)
+		{
+			foreach (var element in path) {
+				Console.Write(element + " > ");
+			}
+			Console.WriteLine();
+		}
+		
+		public void AddPath(DelphiFile[] path)
+		{
+			Console.WriteLine("AddPath:");
+			PrintPath(path);
+			this.paths.Add(path);
+			if (!IsVisible) {
+				Children.Clear();
+				LazyLoading = true;
+				return;
+			}
+			UpdateChildren(path);
+			RaisePropertyChanged("Text");
+		}
+
+		void UpdateChildren(DelphiFile[] path)
+		{
+			var nextNode = path.ElementAtOrDefault(current + 1);
+			if (nextNode == null)
+				return;
+			var pathTreeNode = Children.OfType<PathTreeNode>().FirstOrDefault(n => n.node == nextNode);
+			if (pathTreeNode == null) {
+				pathTreeNode = new PathTreeNode(path, current + 1);
+				Children.Add(pathTreeNode);
+				Console.WriteLine(current + ": new node for " + nextNode);
+			} else {
+				pathTreeNode.AddPath(path);
+				Console.WriteLine(current + ": add path " + nextNode);
+			}
 		}
 		
 		protected override void LoadChildren()
 		{
-			Children.Add(new PathTreeNode(path, current + 1));
+			foreach (var path in paths) {
+				UpdateChildren(path);
+			}
 		}
 		
 		public override void ActivateItem(System.Windows.RoutedEventArgs e)
 		{
-			Window1.BrowseUnit(path[current]);
+			Window1.BrowseUnit(node);
 		}
 	}
 	
@@ -139,7 +209,16 @@ namespace Usalizer.TreeNodes
 					currentFile = parentFile;
 					path.Add(currentFile);
 				}
-				Children.Add(new PathTreeNode(path.ToArray(), 0));
+				path.Reverse();
+				int current = Math.Min(1, path.Count - 1);
+				PathTreeNode pathTreeNode = Children.OfType<PathTreeNode>().FirstOrDefault(n => n.Node == path[current]);
+				var array = path.ToArray();
+				if (pathTreeNode == null) {
+					pathTreeNode = new PathTreeNode(array, current);
+					Children.Add(pathTreeNode);
+				} else {
+					pathTreeNode.AddPath(array);
+				}
 			}
 		}
 
