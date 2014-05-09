@@ -100,6 +100,8 @@ namespace Usalizer.Analysis
 
 		public IEnumerable<DelphiFile> FindPartialName(string text)
 		{
+			if (string.IsNullOrWhiteSpace(text))
+				yield break;
 			foreach (var unit in allUnits.SelectMany(u => u)) {
 				if (unit.UnitName.IndexOf(text, StringComparison.OrdinalIgnoreCase) > -1)
 					yield return unit;

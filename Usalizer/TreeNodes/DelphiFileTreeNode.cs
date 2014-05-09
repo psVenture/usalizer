@@ -95,6 +95,8 @@ namespace Usalizer.TreeNodes
 		readonly int current;
 		readonly DelphiFile node;
 		
+		public static readonly IComparer<SharpTreeNode> NodeTextComparer = KeyComparer.Create((SharpTreeNode n) => n.Text.ToString(), StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+		
 		public PathTreeNode(DelphiFile[] path, int current)
 		{
 			if (path == null)
@@ -118,18 +120,8 @@ namespace Usalizer.TreeNodes
 			}
 		}
 		
-		void PrintPath(DelphiFile[] path)
-		{
-			foreach (var element in path) {
-				Console.Write(element + " > ");
-			}
-			Console.WriteLine();
-		}
-		
 		public void AddPath(DelphiFile[] path)
 		{
-			Console.WriteLine("AddPath:");
-			PrintPath(path);
 			this.paths.Add(path);
 			if (!IsVisible) {
 				Children.Clear();
@@ -148,11 +140,9 @@ namespace Usalizer.TreeNodes
 			var pathTreeNode = Children.OfType<PathTreeNode>().FirstOrDefault(n => n.node == nextNode);
 			if (pathTreeNode == null) {
 				pathTreeNode = new PathTreeNode(path, current + 1);
-				Children.Add(pathTreeNode);
-				Console.WriteLine(current + ": new node for " + nextNode);
+				Children.OrderedInsert(pathTreeNode, NodeTextComparer);
 			} else {
 				pathTreeNode.AddPath(path);
-				Console.WriteLine(current + ": add path " + nextNode);
 			}
 		}
 		
@@ -169,22 +159,10 @@ namespace Usalizer.TreeNodes
 		}
 	}
 	
-	public class ResultInfo
-	{
-		public DelphiFile endPoint;
-		public Dictionary<DelphiFile, DelphiFile> parent;
-	}
-	
 	public class PackageTreeNode : SharpTreeNode
 	{
-		Package package;
-		List<ResultInfo> results = new List<ResultInfo>();
-
-		public List<ResultInfo> Results {
-			get {
-				return results;
-			}
-		}
+		readonly Package package;
+		readonly List<Tuple<DelphiFile, Dictionary<DelphiFile, DelphiFile>>> results = new List<Tuple<DelphiFile, Dictionary<DelphiFile, DelphiFile>>>();
 		
 		public PackageTreeNode(Package package)
 		{
@@ -202,10 +180,10 @@ namespace Usalizer.TreeNodes
 		{
 			foreach (var result in results) {
 				List<DelphiFile> path = new List<DelphiFile>();
-				var currentFile = result.endPoint;
+				var currentFile = result.Item1;
 				DelphiFile parentFile;
 				path.Add(currentFile);
-				while (result.parent.TryGetValue(currentFile, out parentFile)) {
+				while (result.Item2.TryGetValue(currentFile, out parentFile)) {
 					currentFile = parentFile;
 					path.Add(currentFile);
 				}
@@ -215,7 +193,7 @@ namespace Usalizer.TreeNodes
 				var array = path.ToArray();
 				if (pathTreeNode == null) {
 					pathTreeNode = new PathTreeNode(array, current);
-					Children.Add(pathTreeNode);
+					Children.OrderedInsert(pathTreeNode, PathTreeNode.NodeTextComparer);
 				} else {
 					pathTreeNode.AddPath(array);
 				}
@@ -226,6 +204,11 @@ namespace Usalizer.TreeNodes
 			get {
 				return package;
 			}
+		}
+		
+		public void AddResult(DelphiFile endPoint, Dictionary<DelphiFile, DelphiFile> parents)
+		{
+			results.Add(Tuple.Create(endPoint, parents));
 		}
 		
 		public override void ActivateItem(System.Windows.RoutedEventArgs e)
@@ -245,6 +228,122 @@ namespace Usalizer.TreeNodes
 					return " (implementation)";
 			}
 			return "";
+		}
+		
+		/// <summary>
+		/// Inserts an item into a sorted list.
+		/// </summary>
+		public static void OrderedInsert<T>(this IList<T> list, T item, IComparer<T> comparer)
+		{
+			int pos = BinarySearch(list, item, x => x, comparer);
+			if (pos < 0)
+				pos = ~pos;
+			list.Insert(pos, item);
+		}
+		
+		/// <summary>
+		/// Searches a sorted list
+		/// </summary>
+		/// <param name="list">The list to search in</param>
+		/// <param name="key">The key to search for</param>
+		/// <param name="keySelector">Function that maps list items to their sort key</param>
+		/// <param name="keyComparer">Comparer used for the sort</param>
+		/// <returns>Returns the index of the element with the specified key.
+		/// If no such element is found, this method returns a negative number that is the bitwise complement of the
+		/// index where the element could be inserted while maintaining the order.</returns>
+		public static int BinarySearch<T, K>(this IList<T> list, K key, Func<T, K> keySelector, IComparer<K> keyComparer = null)
+		{
+			return BinarySearch(list, 0, list.Count, key, keySelector, keyComparer);
+		}
+		
+		/// <summary>
+		/// Searches a sorted list
+		/// </summary>
+		/// <param name="list">The list to search in</param>
+		/// <param name="index">Starting index of the range to search</param>
+		/// <param name="length">Length of the range to search</param>
+		/// <param name="key">The key to search for</param>
+		/// <param name="keySelector">Function that maps list items to their sort key</param>
+		/// <param name="keyComparer">Comparer used for the sort</param>
+		/// <returns>Returns the index of the element with the specified key.
+		/// If no such element is found in the specified range, this method returns a negative number that is the bitwise complement of the
+		/// index where the element could be inserted while maintaining the order.</returns>
+		public static int BinarySearch<T, K>(this IList<T> list, int index, int length, K key, Func<T, K> keySelector, IComparer<K> keyComparer = null)
+		{
+			if (keyComparer == null)
+				keyComparer = Comparer<K>.Default;
+			int low = index;
+			int high = index + length - 1;
+			while (low <= high) {
+				int mid = low + (high - low >> 1);
+				int r = keyComparer.Compare(keySelector(list[mid]), key);
+				if (r == 0) {
+					return mid;
+				} else if (r < 0) {
+					low = mid + 1;
+				} else {
+					high = mid - 1;
+				}
+			}
+			return ~low;
+		}
+	}
+	
+	public static class KeyComparer
+	{
+		public static KeyComparer<TElement, TKey> Create<TElement, TKey>(Func<TElement, TKey> keySelector)
+		{
+			return new KeyComparer<TElement, TKey>(keySelector, Comparer<TKey>.Default, EqualityComparer<TKey>.Default);
+		}
+		
+		public static KeyComparer<TElement, TKey> Create<TElement, TKey>(Func<TElement, TKey> keySelector, IComparer<TKey> comparer, IEqualityComparer<TKey> equalityComparer)
+		{
+			return new KeyComparer<TElement, TKey>(keySelector, comparer, equalityComparer);
+		}
+		
+		public static IComparer<TElement> Create<TElement, TKey>(Func<TElement, TKey> keySelector, IComparer<TKey> comparer)
+		{
+			return new KeyComparer<TElement, TKey>(keySelector, comparer, EqualityComparer<TKey>.Default);
+		}
+		
+		public static IEqualityComparer<TElement> Create<TElement, TKey>(Func<TElement, TKey> keySelector, IEqualityComparer<TKey> equalityComparer)
+		{
+			return new KeyComparer<TElement, TKey>(keySelector, Comparer<TKey>.Default, equalityComparer);
+		}
+	}
+	
+	public class KeyComparer<TElement, TKey> : IComparer<TElement>, IEqualityComparer<TElement>
+	{
+		readonly Func<TElement, TKey> keySelector;
+		readonly IComparer<TKey> keyComparer;
+		readonly IEqualityComparer<TKey> keyEqualityComparer;
+		
+		public KeyComparer(Func<TElement, TKey> keySelector, IComparer<TKey> keyComparer, IEqualityComparer<TKey> keyEqualityComparer)
+		{
+			if (keySelector == null)
+				throw new ArgumentNullException("keySelector");
+			if (keyComparer == null)
+				throw new ArgumentNullException("keyComparer");
+			if (keyEqualityComparer == null)
+				throw new ArgumentNullException("keyEqualityComparer");
+			this.keySelector = keySelector;
+			this.keyComparer = keyComparer;
+			this.keyEqualityComparer = keyEqualityComparer;
+		}
+		
+		public int Compare(TElement x, TElement y)
+		{
+			return keyComparer.Compare(keySelector(x), keySelector(y));
+		}
+		
+		public bool Equals(TElement x, TElement y)
+		{
+			return keyEqualityComparer.Equals(keySelector(x), keySelector(y));
+		}
+		
+		public int GetHashCode(TElement obj)
+		{
+			return keyEqualityComparer.GetHashCode(keySelector(obj));
 		}
 	}
 }

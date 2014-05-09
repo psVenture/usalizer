@@ -30,6 +30,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Search;
 using ICSharpCode.TreeView;
 using Usalizer.Analysis;
 using Usalizer.TreeNodes;
@@ -44,6 +45,7 @@ namespace Usalizer
 		public Window1()
 		{
 			InitializeComponent();
+			SearchPanel.Install(codeBrowser);
 		}
 		
 		readonly object progressLock = new object();
@@ -153,7 +155,7 @@ namespace Usalizer
 								packageNode = new PackageTreeNode(package);
 								resultTreeNode.Children.Add(packageNode);
 							}
-							packageNode.Results.Add(new ResultInfo { endPoint = endPoint, parent = parent });
+							packageNode.AddResult(endPoint, parent);
 						}
 					}
 					root.Children.Add(resultTreeNode);
@@ -168,8 +170,8 @@ namespace Usalizer
 		
 		void TreeViewSearchBoxKeyDown(object sender, KeyEventArgs e)
 		{
-			if (e.Key != Key.Enter) return;
-			FilterNodes(((TextBox)sender).Text);
+			if (e.Key == Key.Enter)
+				FilterNodes(((TextBox)sender).Text);
 		}
 		
 		void ParseTextClick(object sender, System.Windows.RoutedEventArgs e)
