@@ -183,7 +183,7 @@ namespace Usalizer.Analysis
 					switch (state) {
 						case LookFor.Unit:
 							if (t.Kind == TokenKind.Identifier && prev.IsKeyword("unit")) {
-								unit = new DelphiFile(t.Value, fileName);
+								unit = new DelphiFile(ParseUnitIdentifier(ref t, tokenizer), fileName);
 								state = LookFor.InterfaceUses;
 							}
 							break;
@@ -193,7 +193,7 @@ namespace Usalizer.Analysis
 								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
 									t = tokenizer.Current;
 									if (t.Kind == TokenKind.Identifier)
-										interfaceUses.Add(new UsesClause(unit, t.Value));
+										interfaceUses.Add(new UsesClause(unit, ParseUnitIdentifier(ref t, tokenizer)));
 								}
 							} else if (prev.IsKeyword("interface")) {
 								state = LookFor.ImplementationUses;
@@ -204,7 +204,7 @@ namespace Usalizer.Analysis
 								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
 									t = tokenizer.Current;
 									if (t.Kind == TokenKind.Identifier)
-										implementationUses.Add(new UsesClause(unit, t.Value));
+										implementationUses.Add(new UsesClause(unit, ParseUnitIdentifier(ref t, tokenizer)));
 								}
 								goto done;
 							}
@@ -240,7 +240,7 @@ namespace Usalizer.Analysis
 					switch (state) {
 						case LookFor.Package:
 							if (t.Kind == TokenKind.Identifier && prev.IsKeyword("package")) {
-								package = new Package(t.Value, fileName);
+								package = new Package(ParseUnitIdentifier(ref t, tokenizer), fileName);
 								state = LookFor.ContainsUnit;
 							}
 							break;
@@ -249,7 +249,7 @@ namespace Usalizer.Analysis
 								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
 									t = tokenizer.Current;
 									if (t.Kind == TokenKind.Identifier) {
-										var unit = ResolveUnitName(t.Value);
+										var unit = ResolveUnitName(ParseUnitIdentifier(ref t, tokenizer));
 										if (unit != null) {
 											containingUnits.Add(unit);
 											if (package != null)
@@ -272,6 +272,23 @@ namespace Usalizer.Analysis
 			} catch (Exception ex) {
 				throw new Exception("Error while processing: " + fileName, ex);
 			}
+		}
+
+		string ParseUnitIdentifier(ref Token t, IEnumerator<Token> tokenizer)
+		{
+			Token prev = t;
+			StringBuilder sb = new StringBuilder(prev.Value);
+			while (tokenizer.MoveNext()) {
+				t = tokenizer.Current;
+				if (t.Kind == TokenKind.Semicolon || t.Kind == TokenKind.Comma)
+					break;
+				if (t.Kind == TokenKind.Identifier)
+					sb.Append(t.Value);
+				else if (t.Kind == TokenKind.Dot)
+					sb.Append('.');
+				prev = t;
+			}
+			return sb.ToString();
 		}
 		
 		public DelphiFile ResolveUnitName(string unitName, string inLocation = null)
