@@ -155,7 +155,7 @@ namespace Usalizer
 							var packageNode = resultTreeNode.Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
 							if (packageNode == null) {
 								packageNode = new PackageTreeNode(package, result);
-								resultTreeNode.Children.OrderedInsert(packageNode, PathTreeNode.NodeTextComparer, 3);
+								resultTreeNode.Children.OrderedInsert(packageNode, PathTreeNode.NodeTextComparer, 2);
 							}
 							packageNode.AddResult(endPoint, parent);
 						}

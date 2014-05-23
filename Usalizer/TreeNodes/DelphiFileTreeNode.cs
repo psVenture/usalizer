@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Windows.Media;
 using ICSharpCode.TreeView;
 using Usalizer.Analysis;
 
@@ -36,39 +37,15 @@ namespace Usalizer.TreeNodes
 			
 			Children.Add(new UsesTreeNode(file, UsesSection.Both));
 			Children.Add(new UsedByTreeNode(file, UsesSection.Both));
-			Children.Add(new DirectlyInPackageTreeNode(file));
 		}
 		
 		public override object Text {
 			get { return file.UnitName; }
 		}
 		
-		public override void ActivateItem(System.Windows.RoutedEventArgs e)
-		{
-			Window1.BrowseUnit(file);
-		}
-	}
-
-	public class DirectlyInPackageTreeNode : SharpTreeNode
-	{
-		DelphiFile file;
-		
-		public DirectlyInPackageTreeNode(DelphiFile file)
-		{
-			if (file == null)
-				throw new ArgumentNullException("file");
-			this.file = file;
-			this.LazyLoading = true;
-		}
-		
-		public override object Text {
-			get { return "directly in package"; }
-		}
-		
-		protected override void LoadChildren()
-		{
-			foreach (var p in file.DirectlyInPackages) {
-				Children.Add(new PackageTreeNode(p));
+		public override Brush Foreground {
+			get {
+				return file.DirectlyInPackages.Count > 0 ? Brushes.Green : Brushes.Red;
 			}
 		}
 	}
@@ -111,12 +88,18 @@ namespace Usalizer.TreeNodes
 		}
 		
 		public override object Text {
-			get { return (current > 0 ? "used by " : "") + node.UnitName + (paths.Any(path => current == path.Length - 1) ? " (directly in package)" : ""); }
+			get { return (current > 0 ? "used by " : "") + node.UnitName; }
 		}
 
 		public DelphiFile Node {
 			get {
 				return node;
+			}
+		}
+		
+		public override Brush Foreground {
+			get {
+				return node.DirectlyInPackages.Count > 0 ? Brushes.Green : Brushes.Red;
 			}
 		}
 		
@@ -151,11 +134,6 @@ namespace Usalizer.TreeNodes
 			foreach (var path in paths) {
 				UpdateChildren(path);
 			}
-		}
-		
-		public override void ActivateItem(System.Windows.RoutedEventArgs e)
-		{
-			Window1.BrowseUnit(node);
 		}
 	}
 	
@@ -217,71 +195,6 @@ namespace Usalizer.TreeNodes
 		{
 			Debug.Assert(target != null);
 			results.Add(Tuple.Create(endPoint, parents));
-		}
-		
-		public override void ActivateItem(System.Windows.RoutedEventArgs e)
-		{
-			Window1.BrowseUnit(package);
-		}
-	}
-	
-	
-	
-	public static class KeyComparer
-	{
-		public static KeyComparer<TElement, TKey> Create<TElement, TKey>(Func<TElement, TKey> keySelector)
-		{
-			return new KeyComparer<TElement, TKey>(keySelector, Comparer<TKey>.Default, EqualityComparer<TKey>.Default);
-		}
-		
-		public static KeyComparer<TElement, TKey> Create<TElement, TKey>(Func<TElement, TKey> keySelector, IComparer<TKey> comparer, IEqualityComparer<TKey> equalityComparer)
-		{
-			return new KeyComparer<TElement, TKey>(keySelector, comparer, equalityComparer);
-		}
-		
-		public static IComparer<TElement> Create<TElement, TKey>(Func<TElement, TKey> keySelector, IComparer<TKey> comparer)
-		{
-			return new KeyComparer<TElement, TKey>(keySelector, comparer, EqualityComparer<TKey>.Default);
-		}
-		
-		public static IEqualityComparer<TElement> Create<TElement, TKey>(Func<TElement, TKey> keySelector, IEqualityComparer<TKey> equalityComparer)
-		{
-			return new KeyComparer<TElement, TKey>(keySelector, Comparer<TKey>.Default, equalityComparer);
-		}
-	}
-	
-	public class KeyComparer<TElement, TKey> : IComparer<TElement>, IEqualityComparer<TElement>
-	{
-		readonly Func<TElement, TKey> keySelector;
-		readonly IComparer<TKey> keyComparer;
-		readonly IEqualityComparer<TKey> keyEqualityComparer;
-		
-		public KeyComparer(Func<TElement, TKey> keySelector, IComparer<TKey> keyComparer, IEqualityComparer<TKey> keyEqualityComparer)
-		{
-			if (keySelector == null)
-				throw new ArgumentNullException("keySelector");
-			if (keyComparer == null)
-				throw new ArgumentNullException("keyComparer");
-			if (keyEqualityComparer == null)
-				throw new ArgumentNullException("keyEqualityComparer");
-			this.keySelector = keySelector;
-			this.keyComparer = keyComparer;
-			this.keyEqualityComparer = keyEqualityComparer;
-		}
-		
-		public int Compare(TElement x, TElement y)
-		{
-			return keyComparer.Compare(keySelector(x), keySelector(y));
-		}
-		
-		public bool Equals(TElement x, TElement y)
-		{
-			return keyEqualityComparer.Equals(keySelector(x), keySelector(y));
-		}
-		
-		public int GetHashCode(TElement obj)
-		{
-			return keyEqualityComparer.GetHashCode(keySelector(obj));
 		}
 	}
 }
