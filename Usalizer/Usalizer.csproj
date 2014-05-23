@@ -91,6 +91,7 @@
     <Compile Include="TreeNodes\UnresolvedReferenceTreeNode.cs" />
     <Compile Include="TreeNodes\UsedByTreeNode.cs" />
     <Compile Include="TreeNodes\UsesTreeNode.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="Window1.xaml.cs">
       <SubType>Code</SubType>
       <DependentUpon>Window1.xaml</DependentUpon>
