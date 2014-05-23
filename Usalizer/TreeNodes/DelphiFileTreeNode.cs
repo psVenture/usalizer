@@ -48,7 +48,7 @@ namespace Usalizer.TreeNodes
 			Window1.BrowseUnit(file);
 		}
 	}
-	
+
 	public class DirectlyInPackageTreeNode : SharpTreeNode
 	{
 		DelphiFile file;
@@ -161,14 +161,16 @@ namespace Usalizer.TreeNodes
 	
 	public class PackageTreeNode : SharpTreeNode
 	{
+		readonly DelphiFile target;
 		readonly Package package;
 		readonly List<Tuple<DelphiFile, Dictionary<DelphiFile, DelphiFile>>> results = new List<Tuple<DelphiFile, Dictionary<DelphiFile, DelphiFile>>>();
 		
-		public PackageTreeNode(Package package)
+		public PackageTreeNode(Package package, DelphiFile target = null)
 		{
 			if (package == null)
 				throw new ArgumentNullException("package");
 			this.package = package;
+			this.target = target;
 			LazyLoading = true;
 		}
 		
@@ -185,17 +187,22 @@ namespace Usalizer.TreeNodes
 				path.Add(currentFile);
 				while (result.Item2.TryGetValue(currentFile, out parentFile)) {
 					currentFile = parentFile;
+					Debug.Assert(!path.Contains(currentFile), "unresolved loop found!");
 					path.Add(currentFile);
+					if (currentFile == target)
+						break;
 				}
 				path.Reverse();
 				int current = Math.Min(1, path.Count - 1);
-				PathTreeNode pathTreeNode = Children.OfType<PathTreeNode>().FirstOrDefault(n => n.Node == path[current]);
-				var array = path.ToArray();
-				if (pathTreeNode == null) {
-					pathTreeNode = new PathTreeNode(array, current);
-					Children.OrderedInsert(pathTreeNode, PathTreeNode.NodeTextComparer);
-				} else {
-					pathTreeNode.AddPath(array);
+				if (current > 0) { // currently ignore paths that have only one node
+					PathTreeNode pathTreeNode = Children.OfType<PathTreeNode>().FirstOrDefault(n => n.Node == path[current]);
+					var array = path.ToArray();
+					if (pathTreeNode == null) {
+						pathTreeNode = new PathTreeNode(array, current);
+						Children.OrderedInsert(pathTreeNode, PathTreeNode.NodeTextComparer);
+					} else {
+						pathTreeNode.AddPath(array);
+					}
 				}
 			}
 		}
@@ -208,6 +215,7 @@ namespace Usalizer.TreeNodes
 		
 		public void AddResult(DelphiFile endPoint, Dictionary<DelphiFile, DelphiFile> parents)
 		{
+			Debug.Assert(target != null);
 			results.Add(Tuple.Create(endPoint, parents));
 		}
 		
@@ -217,77 +225,7 @@ namespace Usalizer.TreeNodes
 		}
 	}
 	
-	static class Utils
-	{
-		public static string GetSectionText(this UsesSection section)
-		{
-			switch (section) {
-				case UsesSection.Interface:
-					return " (interface)";
-				case UsesSection.Implementation:
-					return " (implementation)";
-			}
-			return "";
-		}
-		
-		/// <summary>
-		/// Inserts an item into a sorted list.
-		/// </summary>
-		public static void OrderedInsert<T>(this IList<T> list, T item, IComparer<T> comparer)
-		{
-			int pos = BinarySearch(list, item, x => x, comparer);
-			if (pos < 0)
-				pos = ~pos;
-			list.Insert(pos, item);
-		}
-		
-		/// <summary>
-		/// Searches a sorted list
-		/// </summary>
-		/// <param name="list">The list to search in</param>
-		/// <param name="key">The key to search for</param>
-		/// <param name="keySelector">Function that maps list items to their sort key</param>
-		/// <param name="keyComparer">Comparer used for the sort</param>
-		/// <returns>Returns the index of the element with the specified key.
-		/// If no such element is found, this method returns a negative number that is the bitwise complement of the
-		/// index where the element could be inserted while maintaining the order.</returns>
-		public static int BinarySearch<T, K>(this IList<T> list, K key, Func<T, K> keySelector, IComparer<K> keyComparer = null)
-		{
-			return BinarySearch(list, 0, list.Count, key, keySelector, keyComparer);
-		}
-		
-		/// <summary>
-		/// Searches a sorted list
-		/// </summary>
-		/// <param name="list">The list to search in</param>
-		/// <param name="index">Starting index of the range to search</param>
-		/// <param name="length">Length of the range to search</param>
-		/// <param name="key">The key to search for</param>
-		/// <param name="keySelector">Function that maps list items to their sort key</param>
-		/// <param name="keyComparer">Comparer used for the sort</param>
-		/// <returns>Returns the index of the element with the specified key.
-		/// If no such element is found in the specified range, this method returns a negative number that is the bitwise complement of the
-		/// index where the element could be inserted while maintaining the order.</returns>
-		public static int BinarySearch<T, K>(this IList<T> list, int index, int length, K key, Func<T, K> keySelector, IComparer<K> keyComparer = null)
-		{
-			if (keyComparer == null)
-				keyComparer = Comparer<K>.Default;
-			int low = index;
-			int high = index + length - 1;
-			while (low <= high) {
-				int mid = low + (high - low >> 1);
-				int r = keyComparer.Compare(keySelector(list[mid]), key);
-				if (r == 0) {
-					return mid;
-				} else if (r < 0) {
-					low = mid + 1;
-				} else {
-					high = mid - 1;
-				}
-			}
-			return ~low;
-		}
-	}
+	
 	
 	public static class KeyComparer
 	{

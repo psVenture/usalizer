@@ -29,6 +29,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Xml.Linq;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Search;
 using ICSharpCode.TreeView;
@@ -46,6 +47,7 @@ namespace Usalizer
 		{
 			InitializeComponent();
 			SearchPanel.Install(codeBrowser);
+			LoadSettings();
 		}
 		
 		readonly object progressLock = new object();
@@ -152,8 +154,8 @@ namespace Usalizer
 							var p = package;
 							var packageNode = resultTreeNode.Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
 							if (packageNode == null) {
-								packageNode = new PackageTreeNode(package);
-								resultTreeNode.Children.Add(packageNode);
+								packageNode = new PackageTreeNode(package, result);
+								resultTreeNode.Children.OrderedInsert(packageNode, PathTreeNode.NodeTextComparer, 3);
 							}
 							packageNode.AddResult(endPoint, parent);
 						}
@@ -177,6 +179,33 @@ namespace Usalizer
 		void SearchClick(object sender, System.Windows.RoutedEventArgs e)
 		{
 			FilterNodes(searchText.Text);
+		}
+
+		void LoadSettings()
+		{
+			if (!File.Exists("settings.xml")) return;
+			XDocument settings = XDocument.Load("settings.xml");
+			var value = settings.Root.Element("location").Value;
+			Point location;
+			if (Utils.TryParse(value, out location)) {
+				Left = location.X;
+				Top = location.Y;
+			}
+		}
+
+		void SaveSettings()
+		{
+			XDocument settings = XDocument.Parse("<settings></settings>");
+			
+			settings.Root.Add(new XElement("location", new Point(Left, Top)));
+			settings.Root.Add(new XElement("size", new Size(ActualWidth, ActualHeight)));
+			settings.Save("settings.xml");
+		}
+
+		protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+		{
+			SaveSettings();
+			base.OnClosing(e);
 		}
 	}
 }
