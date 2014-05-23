@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Xml.Linq;
 using Usalizer.Analysis;
 
 namespace Usalizer.TreeNodes
@@ -30,10 +31,31 @@ namespace Usalizer.TreeNodes
 			try {
 				result = Point.Parse(value);
 				return true;
-			} catch (Exception ex) {
+			} catch (Exception) {
 				result = new Point(0,0);
 				return false;
 			}
+		}
+		
+		public static bool TryParse(string value, out Size result)
+		{
+			try {
+				result = Size.Parse(value);
+				return true;
+			} catch (Exception) {
+				result = Size.Empty;
+				return false;
+			}
+		}
+		
+		public static string GetSetting(this XDocument document, string key, string defaultValue = "")
+		{
+			if (document == null)
+				throw new ArgumentNullException("document");
+			var element = document.Root.Element(key);
+			if (element == null)
+				return defaultValue;
+			return element.Value ?? defaultValue;
 		}
 		
 		public static string GetSectionText(this UsesSection section)

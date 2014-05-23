@@ -17,6 +17,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -47,7 +48,12 @@ namespace Usalizer
 		{
 			InitializeComponent();
 			SearchPanel.Install(codeBrowser);
-			LoadSettings();
+			try {
+				LoadSettings();
+			// disable once EmptyGeneralCatchClause
+			} catch (Exception) {
+				// ignore any exceptions when loading settings
+			}
 		}
 		
 		readonly object progressLock = new object();
@@ -191,14 +197,31 @@ namespace Usalizer
 				Left = location.X;
 				Top = location.Y;
 			}
+			value = settings.Root.Element("size").Value;
+			Size size;
+			if (Utils.TryParse(value, out size)) {
+				Width = size.Width;
+				Height = size.Height;
+			}
+			value = settings.Root.Element("windowstate").Value;
+			WindowState state;
+			if (Enum.TryParse(value, out state))
+				this.WindowState = state;
+			baseDirectory.Text = settings.Root.Element("baseDirectory").Value;
+			packageDir.Text = settings.Root.Element("packageDir").Value;
+			directives.Text = settings.Root.Element("directives").Value;
 		}
 
 		void SaveSettings()
 		{
 			XDocument settings = XDocument.Parse("<settings></settings>");
 			
-			settings.Root.Add(new XElement("location", new Point(Left, Top)));
-			settings.Root.Add(new XElement("size", new Size(ActualWidth, ActualHeight)));
+			settings.Root.Add(new XElement("location", new Point(Left, Top).ToString(CultureInfo.InvariantCulture)));
+			settings.Root.Add(new XElement("size", new Size(ActualWidth, ActualHeight).ToString(CultureInfo.InvariantCulture)));
+			settings.Root.Add(new XElement("windowstate", WindowState));
+			settings.Root.Add(new XElement("baseDirectory", baseDirectory.Text));
+			settings.Root.Add(new XElement("packageDir", packageDir.Text));
+			settings.Root.Add(new XElement("directives", directives.Text));
 			settings.Save("settings.xml");
 		}
 

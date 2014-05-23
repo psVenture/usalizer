@@ -16,6 +16,7 @@ namespace Usalizer
 		{
 			MessageBox.Show(e.Exception.ToString());
 			e.Handled = true;
+			Environment.Exit(0);
 		}
 	}
 }
