@@ -66,23 +66,13 @@ namespace Usalizer
 			}
 		}
 		
-		public static void BrowseUnit(DelphiFile file)
+		public static void BrowseUnit(string fileName)
 		{
 			Window1 current = Application.Current.MainWindow as Window1;
 			if (current == null)
 				return;
 			
-			current.codeBrowser.Document.Text = File.ReadAllText(file.Location);
-			current.resultsView.SelectedIndex = 2;
-		}
-		
-		public static void BrowseUnit(Package file)
-		{
-			Window1 current = Application.Current.MainWindow as Window1;
-			if (current == null)
-				return;
-			
-			current.codeBrowser.Document.Text = File.ReadAllText(file.Location);
+			current.codeBrowser.Document.Text = File.ReadAllText(fileName);
 			current.resultsView.SelectedIndex = 2;
 		}
 		
@@ -152,21 +142,7 @@ namespace Usalizer
 			var root = new SharpTreeNode();
 			try {
 				foreach (var result in currentAnalysis.FindPartialName(text)) {
-					Dictionary<DelphiFile, DelphiFile> parent;
-					var endPoints = currentAnalysis.FindContainingPackages(result, out parent);
-					var resultTreeNode = new DelphiFileTreeNode(result);
-					foreach (var endPoint in endPoints) {
-						foreach (var package in endPoint.DirectlyInPackages) {
-							var p = package;
-							var packageNode = resultTreeNode.Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
-							if (packageNode == null) {
-								packageNode = new PackageTreeNode(package, result);
-								resultTreeNode.Children.OrderedInsert(packageNode, PathTreeNode.NodeTextComparer, 2);
-							}
-							packageNode.AddResult(endPoint, parent);
-						}
-					}
-					root.Children.Add(resultTreeNode);
+					root.Children.Add(SearchReferences(result));
 				}
 				if (root.Children.Count == 0) {
 					root.Children.Add(new NoResultTreeNode(text));
@@ -174,6 +150,36 @@ namespace Usalizer
 			} finally {
 				resultsTree.Root = root;
 			}
+		}
+		
+		
+		public static void AnalyzeThis(DelphiFile result)
+		{
+			var root = new SharpTreeNode();
+			try {
+				root.Children.Add(SearchReferences(result));
+			} finally {
+				((Window1)Application.Current.MainWindow).resultsTree.Root = root;
+			}
+		}
+
+		static SharpTreeNode SearchReferences(DelphiFile result)
+		{
+			Dictionary<DelphiFile, DelphiFile> parent;
+			var endPoints = currentAnalysis.FindContainingPackages(result, out parent);
+			var resultTreeNode = new DelphiFileTreeNode(result);
+			foreach (var endPoint in endPoints) {
+				foreach (var package in endPoint.DirectlyInPackages) {
+					var p = package;
+					var packageNode = resultTreeNode.Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
+					if (packageNode == null) {
+						packageNode = new PackageTreeNode(package, result);
+						resultTreeNode.Children.OrderedInsert(packageNode, PathTreeNode.NodeTextComparer, 2);
+					}
+					packageNode.AddResult(endPoint, parent);
+				}
+			}
+			return resultTreeNode;
 		}
 		
 		void TreeViewSearchBoxKeyDown(object sender, KeyEventArgs e)

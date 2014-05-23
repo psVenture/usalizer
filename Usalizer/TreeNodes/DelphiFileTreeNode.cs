@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Windows.Controls;
 using System.Windows.Media;
 using ICSharpCode.TreeView;
 using Usalizer.Analysis;
@@ -41,6 +42,17 @@ namespace Usalizer.TreeNodes
 		
 		public override object Text {
 			get { return file.UnitName; }
+		}
+		
+		public override void ShowContextMenu(ContextMenuEventArgs e)
+		{
+			new ContextMenu {
+				ItemsSource = new List<MenuItem> {
+					MenuCommands.CreateBrowseCode(file.Location),
+					MenuCommands.CreateAnalyzeThis(file)
+				},
+				IsOpen = true
+			};
 		}
 		
 		public override Brush Foreground {
@@ -135,6 +147,18 @@ namespace Usalizer.TreeNodes
 				UpdateChildren(path);
 			}
 		}
+		
+		public override void ShowContextMenu(ContextMenuEventArgs e)
+		{
+			new ContextMenu {
+				ItemsSource = new List<MenuItem> {
+					MenuCommands.CreateBrowseCode(node.Location),
+					MenuCommands.CreateAnalyzeThis(node)
+				},
+				IsOpen = true
+			};
+		}
+		
 	}
 	
 	public class PackageTreeNode : SharpTreeNode
@@ -195,6 +219,40 @@ namespace Usalizer.TreeNodes
 		{
 			Debug.Assert(target != null);
 			results.Add(Tuple.Create(endPoint, parents));
+		}
+		
+		public override void ShowContextMenu(System.Windows.Controls.ContextMenuEventArgs e)
+		{
+			new ContextMenu {
+				ItemsSource = new List<MenuItem> {
+					MenuCommands.CreateBrowseCode(package.Location)
+				},
+				IsOpen = true
+			};
+		}
+		
+	}
+	
+	public class MenuCommands
+	{
+		public static MenuItem CreateBrowseCode(string path)
+		{
+			var item = new MenuItem {
+				Header = "Open in Code Browser"
+			};
+			item.Click += (sender, e) => Window1.BrowseUnit(path);
+			return item;
+		}
+		
+		public static MenuItem CreateAnalyzeThis(DelphiFile file)
+		{
+			if (file == null)
+				throw new ArgumentNullException("file");
+			var item = new MenuItem {
+				Header = "Analyze this!"
+			};
+			item.Click += (sender, e) => Window1.AnalyzeThis(file);
+			return item;
 		}
 	}
 }
