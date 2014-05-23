@@ -249,7 +249,7 @@ namespace Usalizer.Analysis
 								while (t.Kind != TokenKind.Semicolon && tokenizer.MoveNext()) {
 									t = tokenizer.Current;
 									if (t.Kind == TokenKind.Identifier) {
-										var unit = ResolveUnitName(ParseUnitIdentifier(ref t, tokenizer));
+										var unit = ResolveUnitName(fileName, ParseUnitIdentifier(ref t, tokenizer));
 										if (unit != null) {
 											containingUnits.Add(unit);
 											if (package != null)
@@ -291,12 +291,24 @@ namespace Usalizer.Analysis
 			return sb.ToString();
 		}
 		
-		public DelphiFile ResolveUnitName(string unitName, string inLocation = null)
+		public DelphiFile ResolveUnitName(string contextLocation, string unitName, string inLocation = null)
 		{
-			if (inLocation != null)
-				throw new NotImplementedException();
-			// TODO : implement proper Delphi name resolution
-			return allUnits[unitName].FirstOrDefault();
+			// does not fully follow the spec, but is sufficient for this use-case.
+			// would need a library path...
+			var matches = allUnits[unitName];
+			if (inLocation != null) {
+				inLocation = DelphiIncludeResolver.MakeAbsolute(contextLocation, inLocation);
+				return matches.FirstOrDefault(m => string.Equals(m.Location, inLocation, StringComparison.OrdinalIgnoreCase));
+			}
+			if (matches.Count == 1) {
+				return matches[0];
+			} else {
+				string searchFileName = Path.Combine(Path.GetDirectoryName(contextLocation), unitName + ".pas");
+				var result = matches.FirstOrDefault(m => string.Equals(m.Location, searchFileName, StringComparison.OrdinalIgnoreCase));
+				if (result != null)
+					return result;
+				return matches.FirstOrDefault();
+			}
 		}
 		
 		public IEnumerable<DelphiFile> FindReferences(string unitName, UsesSection section)

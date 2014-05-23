@@ -43,7 +43,7 @@ namespace Usalizer.Analysis
 		
 		public void Resolve(DelphiAnalysis container)
 		{
-			TargetFile = container.ResolveUnitName(Name);
+			TargetFile = container.ResolveUnitName(ParentFile.Location, Name);
 			// TODO : split 'Resolve' and add to list and parallelise
 			if (TargetFile != null) {
 				TargetFile.UsedByFiles.Add(ParentFile);

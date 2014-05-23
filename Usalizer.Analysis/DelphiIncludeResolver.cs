@@ -71,7 +71,7 @@ namespace Usalizer.Analysis
 		/// Slashes are replaced with backslashes, backreferences "." and ".." are 'evaluated'.
 		/// </summary>
 		/// Copied from ICSharpCode.Core project
-		static string NormalizePath(string fileName)
+		public static string NormalizePath(string fileName)
 		{
 			if (string.IsNullOrEmpty(fileName)) return fileName;
 			
@@ -162,6 +162,14 @@ namespace Usalizer.Analysis
 					return ".";
 			}
 			return result.ToString();
+		}
+		
+		public static string MakeAbsolute(string baseFileName, string fileName)
+		{
+			if (Path.IsPathRooted(fileName))
+				return fileName;
+			
+			return NormalizePath(Path.Combine(Path.GetDirectoryName(baseFileName), fileName));
 		}
 	}
 }
