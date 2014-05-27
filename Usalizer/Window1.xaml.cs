@@ -20,20 +20,15 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Threading;
 using System.Xml.Linq;
-using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Search;
 using ICSharpCode.TreeView;
+using Ookii.Dialogs.Wpf;
 using Usalizer.Analysis;
 using Usalizer.TreeNodes;
 
@@ -228,6 +223,18 @@ namespace Usalizer
 		{
 			SaveSettings();
 			base.OnClosing(e);
+		}
+		
+		void PathTextBoxMouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+		{
+			TextBox target = (TextBox)sender;
+			string path = DelphiIncludeResolver.MakeAbsolute(Environment.CurrentDirectory, target.Text); 
+			if (!Directory.Exists(path))
+				path = "";
+			var dlg = new VistaFolderBrowserDialog { SelectedPath = path };
+			if (dlg.ShowDialog() == true) {
+				target.Text = dlg.SelectedPath;
+			}
 		}
 	}
 }

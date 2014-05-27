@@ -50,9 +50,9 @@
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
 				<Label Margin="3">Base-Directory:</Label>
-				<TextBox Margin="3" Name="baseDirectory" Text="C:\work\Trunk\Sourcen" Grid.Column="1" />
+				<TextBox Margin="3" Name="baseDirectory" MouseDoubleClick="PathTextBoxMouseDoubleClick" Grid.Column="1" />
 				<Label Margin="3" Grid.Row="1">Package-Directory:</Label>
-				<TextBox Margin="3" Name="packageDir" Text="C:\work\MyProject\BMDPackages\XE4" Grid.Row="1" Grid.Column="1" />
+				<TextBox Margin="3" Name="packageDir" MouseDoubleClick="PathTextBoxMouseDoubleClick" Grid.Row="1" Grid.Column="1" />
 				<Label Margin="3" Grid.Row="2">Directives:</Label>
 				<TextBox Margin="3" Name="directives" Grid.Row="2" Grid.Column="1" />
 				<StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center">
