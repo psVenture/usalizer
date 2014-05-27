@@ -62,6 +62,27 @@ namespace Usalizer.TreeNodes
 		}
 	}
 	
+	public class ResultTreeNode : DelphiFileTreeNode
+	{
+		public ResultTreeNode(DelphiFile result)
+			: base(result)
+		{
+		}
+
+		public void AddResult(DelphiFile endPoint, DelphiFile result, Dictionary<DelphiFile, DelphiFile> parent)
+		{
+			foreach (var package in endPoint.DirectlyInPackages) {
+				var p = package;
+				var packageNode = Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
+				if (packageNode == null) {
+					packageNode = new PackageTreeNode(p, result);
+					Children.OrderedInsert(packageNode, PathTreeNode.NodeTextComparer, 2);
+				}
+				packageNode.AddResult(endPoint, parent);
+			}
+		}
+	}
+	
 	public class NoResultTreeNode : SharpTreeNode
 	{
 		string text;
@@ -230,10 +251,9 @@ namespace Usalizer.TreeNodes
 				IsOpen = true
 			};
 		}
-		
 	}
 	
-	public class MenuCommands
+	public static class MenuCommands
 	{
 		public static MenuItem CreateBrowseCode(string path)
 		{

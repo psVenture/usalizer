@@ -32,7 +32,7 @@ namespace Usalizer.TreeNodes
 				result = Point.Parse(value);
 				return true;
 			} catch (Exception) {
-				result = new Point(0,0);
+				result = default(Point);
 				return false;
 			}
 		}

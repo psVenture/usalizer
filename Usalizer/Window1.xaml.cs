@@ -50,7 +50,7 @@ namespace Usalizer
 			SearchPanel.Install(codeBrowser);
 			try {
 				LoadSettings();
-			// disable once EmptyGeneralCatchClause
+				// disable once EmptyGeneralCatchClause
 			} catch (Exception) {
 				// ignore any exceptions when loading settings
 			}
@@ -125,16 +125,17 @@ namespace Usalizer
 		
 		void IProgress<Tuple<string, double, bool>>.Report(Tuple<string, double, bool> value)
 		{
-			Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)delegate {
-			                       	lock (progressLock) {
-			                       		progress.IsIndeterminate = false;
-			                       		progressText.Text = value.Item1;
-			                       		if (value.Item3)
-			                       			progress.Value = value.Item2;
-			                       		else
-			                       			progress.Value += value.Item2;
-			                       	}
-			                       });
+			Dispatcher.BeginInvoke(
+				DispatcherPriority.Normal, (Action)delegate {
+					lock (progressLock) {
+						progress.IsIndeterminate = false;
+						progressText.Text = value.Item1;
+						if (value.Item3)
+							progress.Value = value.Item2;
+						else
+							progress.Value += value.Item2;
+					}
+				});
 		}
 
 		void FilterNodes(string text)
@@ -167,17 +168,9 @@ namespace Usalizer
 		{
 			Dictionary<DelphiFile, DelphiFile> parent;
 			var endPoints = currentAnalysis.FindContainingPackages(result, out parent);
-			var resultTreeNode = new DelphiFileTreeNode(result);
+			var resultTreeNode = new ResultTreeNode(result);
 			foreach (var endPoint in endPoints) {
-				foreach (var package in endPoint.DirectlyInPackages) {
-					var p = package;
-					var packageNode = resultTreeNode.Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
-					if (packageNode == null) {
-						packageNode = new PackageTreeNode(package, result);
-						resultTreeNode.Children.OrderedInsert(packageNode, PathTreeNode.NodeTextComparer, 2);
-					}
-					packageNode.AddResult(endPoint, parent);
-				}
+				resultTreeNode.AddResult(endPoint, result, parent);
 			}
 			return resultTreeNode;
 		}

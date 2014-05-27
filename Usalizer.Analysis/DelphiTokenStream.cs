@@ -26,7 +26,7 @@ namespace Usalizer.Analysis
 	/// <summary>
 	/// Description of DelphiTokenStream.
 	/// </summary>
-	public class DelphiTokenStream
+	public static class DelphiTokenStream
 	{
 		static IEnumerable<Token> StreamSingleFile(string fileName)
 		{
