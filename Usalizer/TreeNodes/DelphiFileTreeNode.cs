@@ -68,6 +68,10 @@ namespace Usalizer.TreeNodes
 			: base(result)
 		{
 		}
+		
+		public static readonly IComparer<SharpTreeNode> PackageBuildOrderComparer
+			= KeyComparer.Create((SharpTreeNode n) => n.Text.ToString(), StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+		
 
 		public void AddResult(DelphiFile endPoint, DelphiFile result, Dictionary<DelphiFile, DelphiFile> parent)
 		{
@@ -210,10 +214,10 @@ namespace Usalizer.TreeNodes
 				path.Add(currentFile);
 				while (result.Item2.TryGetValue(currentFile, out parentFile)) {
 					currentFile = parentFile;
-					Debug.Assert(!path.Contains(currentFile), "unresolved loop found!");
-					path.Add(currentFile);
 					if (currentFile == target)
 						break;
+					Debug.Assert(!path.Contains(currentFile), "unresolved loop found!");
+					path.Add(currentFile);
 				}
 				path.Reverse();
 				int current = Math.Min(1, path.Count - 1);
@@ -240,6 +244,14 @@ namespace Usalizer.TreeNodes
 		{
 			Debug.Assert(target != null);
 			results.Add(Tuple.Create(endPoint, parents));
+		}
+		
+		public override Brush Foreground {
+			get {
+				if (target == null)
+					return base.Foreground;
+				return target.DirectlyInPackages.Contains(package) ? Brushes.Green : Brushes.Red;
+			}
 		}
 		
 		public override void ShowContextMenu(System.Windows.Controls.ContextMenuEventArgs e)
