@@ -24,6 +24,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace Usalizer.Analysis
 {
@@ -35,7 +38,7 @@ namespace Usalizer.Analysis
 	public class DelphiAnalysis
 	{
 		string path;
-		string packagePath;
+		string projectGroupFile;
 		string[] symbols;
 		readonly MultiDictionary<string, DelphiFile> allUnits;
 		readonly List<Package> packages;
@@ -53,10 +56,10 @@ namespace Usalizer.Analysis
 			get { return packages.Count; }
 		}
 		
-		public DelphiAnalysis(string path, string packagePath, string[] symbols, IProgress<Tuple<string, double, bool>> progress)
+		public DelphiAnalysis(string path, string projectGroupFile, string[] symbols, IProgress<Tuple<string, double, bool>> progress)
 		{
 			this.path = path;
-			this.packagePath = packagePath;
+			this.projectGroupFile = projectGroupFile;
 			this.symbols = symbols;
 			this.progress = progress;
 			allUnits = new MultiDictionary<string, DelphiFile>(StringComparer.OrdinalIgnoreCase);
@@ -73,12 +76,31 @@ namespace Usalizer.Analysis
 					incFiles = new DirectoryInfo(path).EnumerateFiles("*.inc", SearchOption.AllDirectories).Select(f => f.FullName).ToArray();
 					if (cancellation.IsCancellationRequested)
 						throw new OperationCanceledException();
-					dpkFiles = new DirectoryInfo(packagePath).EnumerateFiles("*.dpk", SearchOption.AllDirectories).Select(f => f.FullName).ToArray();
+					dpkFiles = FindDpkFiles().ToArray();
 					if (cancellation.IsCancellationRequested)
 						throw new OperationCanceledException();
 					resolver = new DelphiIncludeResolver(pasFiles, incFiles);
 					return this;
 				});
+		}
+		
+		IEnumerable<string> FindDpkFiles()
+		{
+			var namespaceManager = new XmlNamespaceManager(new NameTable());
+			namespaceManager.AddNamespace("msb", "http://schemas.microsoft.com/developer/msbuild/2003");
+			var fileNames = ((IEnumerable<object>)XDocument.Load(projectGroupFile)
+			               .XPathEvaluate("/msb:Project/msb:ItemGroup/msb:Projects/@Include", namespaceManager))
+				.OfType<XAttribute>()
+				.Select(a => DelphiIncludeResolver.MakeAbsolute(projectGroupFile, a.Value));
+			foreach (var fileName in fileNames) {
+				var sourceNames = (XDocument.Load(fileName)
+				                   .XPathSelectElements("/msb:Project/msb:PropertyGroup/msb:MainSource", namespaceManager))
+					.Select(e => DelphiIncludeResolver.MakeAbsolute(fileName, e.Value));
+				foreach (var source in sourceNames) {
+					if (Path.GetExtension(source).Equals(".dpk", StringComparison.OrdinalIgnoreCase))
+						yield return source;
+				}
+			}
 		}
 		
 		public void Analyse(CancellationToken cancellation = default(CancellationToken))

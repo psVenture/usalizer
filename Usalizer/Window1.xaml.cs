@@ -28,6 +28,7 @@ using System.Windows.Threading;
 using System.Xml.Linq;
 using ICSharpCode.AvalonEdit.Search;
 using ICSharpCode.TreeView;
+using Microsoft.Win32;
 using Ookii.Dialogs.Wpf;
 using Usalizer.Analysis;
 using Usalizer.TreeNodes;
@@ -79,9 +80,9 @@ namespace Usalizer
 				return;
 			}
 			
-			string packagePath = packageDir.Text;
-			if (!Directory.Exists(packagePath)) {
-				MessageBox.Show(this, packagePath + " does not exist!");
+			string projectGroupFile = projectGroupFileName.Text;
+			if (!File.Exists(projectGroupFile)) {
+				MessageBox.Show(this, projectGroupFile + " does not exist!");
 				return;
 			}
 			
@@ -95,7 +96,7 @@ namespace Usalizer
 			
 			var cancellation = new CancellationTokenSource();
 			
-			currentAnalysis = new DelphiAnalysis(path, packagePath, symbols, this);
+			currentAnalysis = new DelphiAnalysis(path, projectGroupFile, symbols, this);
 			currentAnalysis.PrepareAnalysis(cancellation.Token)
 				.ContinueWith(t => t.Result.Analyse(cancellation.Token))
 				.ContinueWith(t => {
@@ -202,7 +203,7 @@ namespace Usalizer
 			if (Enum.TryParse(value, out state))
 				this.WindowState = state;
 			baseDirectory.Text = settings.Root.Element("baseDirectory").Value;
-			packageDir.Text = settings.Root.Element("packageDir").Value;
+			projectGroupFileName.Text = settings.Root.Element("projectGroupFile").Value;
 			directives.Text = settings.Root.Element("directives").Value;
 		}
 
@@ -214,7 +215,7 @@ namespace Usalizer
 			settings.Root.Add(new XElement("size", new Size(ActualWidth, ActualHeight).ToString(CultureInfo.InvariantCulture)));
 			settings.Root.Add(new XElement("windowstate", WindowState));
 			settings.Root.Add(new XElement("baseDirectory", baseDirectory.Text));
-			settings.Root.Add(new XElement("packageDir", packageDir.Text));
+			settings.Root.Add(new XElement("projectGroupFile", projectGroupFileName.Text));
 			settings.Root.Add(new XElement("directives", directives.Text));
 			settings.Save("settings.xml");
 		}
@@ -235,6 +236,14 @@ namespace Usalizer
 			if (dlg.ShowDialog() == true) {
 				target.Text = dlg.SelectedPath;
 			}
+		}
+		
+		void ProjectGroupTextBoxMouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+		{
+			TextBox target = (TextBox)sender;
+			var dlg = new OpenFileDialog { Filter = "Project group|*.groupproj" };
+			if (dlg.ShowDialog() == true)
+				target.Text = dlg.FileName;
 		}
 	}
 }
