@@ -86,6 +86,7 @@ namespace Usalizer
 				return;
 			}
 			
+			ResetOutput();
 			startButton.IsEnabled = false;
 			SetProgressIndeterminate("Preparing analysis...", true);
 			resultsView.Visibility = Visibility.Hidden;
@@ -117,6 +118,13 @@ namespace Usalizer
 			progress.IsIndeterminate = isIndeterminate;
 			progress.Value = 0;
 			progressText.Text = text;
+		}
+		
+		void ResetOutput()
+		{
+			codeBrowser.Document.Text = "";
+			searchText.Text = "";
+			resultsTree.Root = null;
 		}
 		
 		void IProgress<Tuple<string, double, bool>>.Report(Tuple<string, double, bool> value)
