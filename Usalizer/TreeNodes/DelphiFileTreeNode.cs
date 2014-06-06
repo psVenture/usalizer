@@ -18,7 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using ICSharpCode.TreeView;
@@ -47,9 +49,13 @@ namespace Usalizer.TreeNodes
 		public override void ShowContextMenu(ContextMenuEventArgs e)
 		{
 			new ContextMenu {
-				ItemsSource = new List<MenuItem> {
+				ItemsSource = new object[] {
 					MenuCommands.CreateBrowseCode(file.Location),
-					MenuCommands.CreateAnalyzeThis(file)
+					MenuCommands.CreateAnalyzeThis(file),
+					new Separator(),
+					MenuCommands.CreateCopyUnitName(file),
+					MenuCommands.CreateCopyUnitLocation(file),
+					MenuCommands.CreateCopyThisBranch(this)
 				},
 				IsOpen = true
 			};
@@ -176,9 +182,13 @@ namespace Usalizer.TreeNodes
 		public override void ShowContextMenu(ContextMenuEventArgs e)
 		{
 			new ContextMenu {
-				ItemsSource = new List<MenuItem> {
+				ItemsSource = new object[] {
 					MenuCommands.CreateBrowseCode(node.Location),
-					MenuCommands.CreateAnalyzeThis(node)
+					MenuCommands.CreateAnalyzeThis(node),
+					new Separator(),
+					MenuCommands.CreateCopyUnitName(node),
+					MenuCommands.CreateCopyUnitLocation(node),
+					MenuCommands.CreateCopyThisBranch(this)
 				},
 				IsOpen = true
 			};
@@ -254,11 +264,15 @@ namespace Usalizer.TreeNodes
 			}
 		}
 		
-		public override void ShowContextMenu(System.Windows.Controls.ContextMenuEventArgs e)
+		public override void ShowContextMenu(ContextMenuEventArgs e)
 		{
 			new ContextMenu {
-				ItemsSource = new List<MenuItem> {
-					MenuCommands.CreateBrowseCode(package.Location)
+				ItemsSource = new object[] {
+					MenuCommands.CreateBrowseCode(package.Location),
+					new Separator(),
+					MenuCommands.CreateCopyPackageName(package),
+					MenuCommands.CreateCopyPackageLocation(package),
+					MenuCommands.CreateCopyThisBranch(this)
 				},
 				IsOpen = true
 			};
@@ -285,6 +299,80 @@ namespace Usalizer.TreeNodes
 			};
 			item.Click += (sender, e) => Window1.AnalyzeThis(file);
 			return item;
+		}
+
+		public static MenuItem CreateCopyUnitName(DelphiFile file)
+		{
+			if (file == null)
+				throw new ArgumentNullException("file");
+			var item = new MenuItem {
+				Header = "Copy unit name"
+			};
+			item.Click += (sender, e) => Clipboard.SetText(file.UnitName);
+			return item;
+		}
+		
+		public static MenuItem CreateCopyUnitLocation(DelphiFile file)
+		{
+			if (file == null)
+				throw new ArgumentNullException("file");
+			var item = new MenuItem {
+				Header = "Copy location"
+			};
+			item.Click += (sender, e) => Clipboard.SetText(file.Location);
+			return item;
+		}
+		
+		public static MenuItem CreateCopyPackageName(Package file)
+		{
+			if (file == null)
+				throw new ArgumentNullException("file");
+			var item = new MenuItem {
+				Header = "Copy package name"
+			};
+			item.Click += (sender, e) => Clipboard.SetText(file.PackageName);
+			return item;
+		}
+		
+		public static MenuItem CreateCopyPackageLocation(Package file)
+		{
+			if (file == null)
+				throw new ArgumentNullException("file");
+			var item = new MenuItem {
+				Header = "Copy location"
+			};
+			item.Click += (sender, e) => Clipboard.SetText(file.Location);
+			return item;
+		}
+
+		public static MenuItem CreateCopyThisBranch(SharpTreeNode node)
+		{
+			if (node == null)
+				throw new ArgumentNullException("node");
+			var item = new MenuItem {
+				Header = "Copy this branch as text"
+			};
+			item.Click += (sender, e) => Clipboard.SetText(NodeAndChildrenAsText(node));
+			return item;
+		}
+
+		static string NodeAndChildrenAsText(SharpTreeNode node)
+		{
+			using (StringWriter writer = new StringWriter()) {
+				foreach (var descendant in Utils.PreOrder(node, SelectChildren)) {
+					for (int i = node.Level; i < descendant.Level; i++) {
+						writer.Write("\t");
+					}
+					writer.WriteLine("+ " + descendant.Text);
+				}
+				return writer.ToString();
+			}
+		}
+		
+		static IEnumerable<SharpTreeNode> SelectChildren(SharpTreeNode node)
+		{
+			node.EnsureLazyChildren();
+			return node.Children.Where(n => n is DelphiFileTreeNode || n is PackageTreeNode || n is PathTreeNode);
 		}
 	}
 }
