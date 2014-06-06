@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:tv="http://icsharpcode.net/sharpdevelop/treeview"
         xmlns:ae="http://icsharpcode.net/sharpdevelop/avalonedit"
+        Icon="usalizer-icon32.ico"
         Title="Usalizer" Height="500" Width="700">
 	<DockPanel>
 		<Menu DockPanel.Dock="Top">

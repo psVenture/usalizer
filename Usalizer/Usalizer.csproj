@@ -17,6 +17,7 @@
     <OutputPath>..\bin</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <WarningLevel>4</WarningLevel>
+    <ApplicationIcon>..\usalizer-icon32.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -104,6 +105,9 @@
     <Page Include="Window1.xaml" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="..\usalizer-icon32.ico">
+      <Link>usalizer-icon32.ico</Link>
+    </Resource>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
