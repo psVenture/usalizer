@@ -6,11 +6,6 @@
         Icon="usalizer-icon32.ico"
         Title="Usalizer" Height="500" Width="700">
 	<DockPanel>
-		<Menu DockPanel.Dock="Top">
-			<MenuItem Header="File">
-			
-			</MenuItem>
-		</Menu>
 		<StatusBar DockPanel.Dock="Bottom">
 			<StatusBar.ItemsPanel>
 				<ItemsPanelTemplate>
@@ -39,27 +34,29 @@
 				<RowDefinition Height="Auto"/>
 				<RowDefinition Height="*"/>
 			</Grid.RowDefinitions>
-			<Grid>
-				<Grid.RowDefinitions>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="Auto"/>
-				</Grid.RowDefinitions>
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="Auto"/>
-					<ColumnDefinition Width="*"/>
-				</Grid.ColumnDefinitions>
-				<Label Margin="3">Base-Directory:</Label>
-				<TextBox Margin="3" Name="baseDirectory" MouseDoubleClick="PathTextBoxMouseDoubleClick" Grid.Column="1" />
-				<Label Margin="3" Grid.Row="1">ProjectGroup-File:</Label>
-				<TextBox Margin="3" Name="projectGroupFileName" MouseDoubleClick="ProjectGroupTextBoxMouseDoubleClick" Grid.Row="1" Grid.Column="1" />
-				<Label Margin="3" Grid.Row="2">Directives:</Label>
-				<TextBox Margin="3" Name="directives" Grid.Row="2" Grid.Column="1" />
-				<StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center">
-					<Button Content="Start" Name="startButton" Click="StartClick" Margin="5" MinWidth="150" />
-				</StackPanel>
-			</Grid>
+			<Expander Name="input" Header="Input" ExpandDirection="Left" IsExpanded="True" Collapsed="InputCollapsed" Expanded="InputCollapsed">
+				<Grid>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="Auto"/>
+					</Grid.RowDefinitions>
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="*"/>
+					</Grid.ColumnDefinitions>
+					<Label Margin="3">Base-Directory:</Label>
+					<TextBox Margin="3" Name="baseDirectory" MouseDoubleClick="PathTextBoxMouseDoubleClick" Grid.Column="1" />
+					<Label Margin="3" Grid.Row="1">ProjectGroup-File:</Label>
+					<TextBox Margin="3" Name="projectGroupFileName" MouseDoubleClick="ProjectGroupTextBoxMouseDoubleClick" Grid.Row="1" Grid.Column="1" />
+					<Label Margin="3" Grid.Row="2">Directives:</Label>
+					<TextBox Margin="3" Name="directives" Grid.Row="2" Grid.Column="1" />
+					<StackPanel Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="2" HorizontalAlignment="Center">
+						<Button Content="Start" Name="startButton" Click="StartClick" Margin="5" MinWidth="150" />
+					</StackPanel>
+				</Grid>
+			</Expander>
 			<StackPanel Orientation="Vertical" Grid.Row="1" Name="progressView" Visibility="Collapsed">
 				<ProgressBar Name="progress" Margin="3" Height="16" Width="500" Maximum="1" Minimum="0" />
 				<TextBlock Name="progressText" Width="500" TextTrimming="CharacterEllipsis" />
@@ -80,8 +77,20 @@
 						<tv:SharpTreeView Margin="3" Name="resultsTree" />
 					</DockPanel>
 				</TabItem>
-				<TabItem Header="Graph">
-				
+				<TabItem Header="Unused Units">
+					<DockPanel>
+						<Grid DockPanel.Dock="Top">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="Auto" />
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
+							<Label Margin="3">Unit-Name:</Label>
+							<TextBox Margin="3" Grid.Column="1" Name="unusedUnitsSearchText" KeyDown="UnusedUnitsSearchBoxKeyDown" />
+							<Button Margin="5" Grid.Column="2" Click="UnusedUnitsSearchClick">Search</Button>
+						</Grid>
+						<ListBox Margin="3" Name="unusedUnits" />
+					</DockPanel>
 				</TabItem>
 				<TabItem Header="Code Browser">
 					<ae:TextEditor Name="codeBrowser" ShowLineNumbers="True" FontFamily="Consolas" Margin="3" />

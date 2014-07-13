@@ -88,6 +88,7 @@ namespace Usalizer
 			
 			ResetOutput();
 			startButton.IsEnabled = false;
+			input.IsExpanded = false;
 			SetProgressIndeterminate("Preparing analysis...", true);
 			resultsView.Visibility = Visibility.Hidden;
 			progressView.Visibility = Visibility.Visible;
@@ -106,6 +107,7 @@ namespace Usalizer
 				              	                       		MessageBox.Show(t.Exception.ToString());
 				              	                       	resultsView.Visibility = Visibility.Visible;
 				              	                       	progressView.Visibility = Visibility.Hidden;
+				              	                       	//unusedUnits.ItemsSource = currentAnalysis.UnusedUnits;
 				              	                       	unitCount.Content = "Units: " + currentAnalysis.UnitCount;
 				              	                       	packageCount.Content = "Packages: " + currentAnalysis.PackageCount;
 				              	                       	startButton.IsEnabled = true;
@@ -189,7 +191,23 @@ namespace Usalizer
 		{
 			FilterNodes(searchText.Text);
 		}
+		
+		void UnusedUnitsSearchBoxKeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.Key == Key.Enter)
+				FilterUnusedUnits(((TextBox)sender).Text);
+		}
+		
+		void UnusedUnitsSearchClick(object sender, System.Windows.RoutedEventArgs e)
+		{
+			FilterUnusedUnits(searchText.Text);
+		}
 
+		void FilterUnusedUnits(string text)
+		{
+			throw new NotImplementedException();
+		}
+		
 		void LoadSettings()
 		{
 			if (!File.Exists("settings.xml")) return;
@@ -252,6 +270,11 @@ namespace Usalizer
 			var dlg = new OpenFileDialog { Filter = "Project group|*.groupproj" };
 			if (dlg.ShowDialog() == true)
 				target.Text = dlg.FileName;
+		}
+		
+		void InputCollapsed(object sender, RoutedEventArgs e)
+		{
+			Grid.SetRow(input, input.IsExpanded ? 0 : 1);
 		}
 	}
 }
