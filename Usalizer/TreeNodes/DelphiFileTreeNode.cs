@@ -75,18 +75,15 @@ namespace Usalizer.TreeNodes
 		{
 		}
 		
-		public static readonly IComparer<SharpTreeNode> PackageBuildOrderComparer
-			= KeyComparer.Create((SharpTreeNode n) => n.Text.ToString(), StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
-		
-
 		public void AddResult(DelphiFile endPoint, DelphiFile result, Dictionary<DelphiFile, DelphiFile> parent)
 		{
+			var comparer = KeyComparer.Create<SharpTreeNode, Package>(n => { var pNode = n as PackageTreeNode; if (pNode != null) return pNode.Package; return null; }, Window1.CurrentAnalysis.PackageOrderComparer);
 			foreach (var package in endPoint.DirectlyInPackages) {
 				var p = package;
 				var packageNode = Children.OfType<PackageTreeNode>().FirstOrDefault(n => n.Package == p);
 				if (packageNode == null) {
 					packageNode = new PackageTreeNode(p, result);
-					Children.OrderedInsert(packageNode, PathTreeNode.NodeTextComparer, 2);
+					Children.OrderedInsert(packageNode, comparer, 2);
 				}
 				packageNode.AddResult(endPoint, parent);
 			}

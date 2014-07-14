@@ -60,6 +60,30 @@ namespace Usalizer.Analysis
 		public IReadOnlyList<DelphiFile> UnusedUnits {
 			get { return unusedUnits; }
 		}
+		
+		PackageOrderIComparer packageOrder;
+		
+		public IComparer<Package> PackageOrderComparer {
+			get { return packageOrder; }
+		}
+		
+		class PackageOrderIComparer : IComparer<Package>
+		{
+			string[] dpkFiles;
+			
+			public PackageOrderIComparer(string[] dpkFiles)
+			{
+				if (dpkFiles == null)
+					throw new ArgumentNullException("dpkFiles");
+				this.dpkFiles = dpkFiles;
+			}
+			
+			public int Compare(Package x, Package y)
+			{
+				return Array.IndexOf(dpkFiles, x.Location) - Array.IndexOf(dpkFiles, y.Location);
+			}
+		}
+		
 		public DelphiAnalysis(string path, string projectGroupFile, string[] symbols, IProgress<Tuple<string, double, bool>> progress)
 		{
 			this.path = path;
@@ -82,6 +106,7 @@ namespace Usalizer.Analysis
 					if (cancellation.IsCancellationRequested)
 						throw new OperationCanceledException();
 					dpkFiles = FindDpkFiles().ToArray();
+					packageOrder = new PackageOrderIComparer(dpkFiles);
 					if (cancellation.IsCancellationRequested)
 						throw new OperationCanceledException();
 					resolver = new DelphiIncludeResolver(pasFiles, incFiles);
