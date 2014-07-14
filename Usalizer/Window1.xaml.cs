@@ -23,6 +23,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Threading;
 using System.Xml.Linq;
@@ -40,6 +41,8 @@ namespace Usalizer
 	/// </summary>
 	public partial class Window1 : Window, IProgress<Tuple<string, double, bool>>
 	{
+		InfoAdorner infoAdorner;
+		
 		public Window1()
 		{
 			InitializeComponent();
@@ -99,6 +102,7 @@ namespace Usalizer
 			var cancellation = new CancellationTokenSource();
 			
 			currentAnalysis = new DelphiAnalysis(path, projectGroupFile, symbols, this);
+			infoAdorner = new InfoAdorner(resultsView, currentAnalysis);
 			currentAnalysis.PrepareAnalysis(cancellation.Token)
 				.ContinueWith(t => t.Result.Analyse(cancellation.Token))
 				.ContinueWith(t => {
@@ -107,9 +111,8 @@ namespace Usalizer
 				              	                       		MessageBox.Show(t.Exception.ToString());
 				              	                       	resultsView.Visibility = Visibility.Visible;
 				              	                       	progressView.Visibility = Visibility.Hidden;
-				              	                       	//unusedUnits.ItemsSource = currentAnalysis.UnusedUnits;
-				              	                       	unitCount.Content = "Units: " + currentAnalysis.UnitCount;
-				              	                       	packageCount.Content = "Packages: " + currentAnalysis.PackageCount;
+				              	                       	unusedUnits.ItemsSource = currentAnalysis.UnusedUnits;
+				              	                       	AdornerLayer.GetAdornerLayer(resultsView).Add(infoAdorner);
 				              	                       	startButton.IsEnabled = true;
 				              	                       });
 				              });
@@ -127,6 +130,9 @@ namespace Usalizer
 			codeBrowser.Document.Text = "";
 			searchText.Text = "";
 			resultsTree.Root = null;
+			if (infoAdorner != null) {
+				AdornerLayer.GetAdornerLayer(resultsView).Remove(infoAdorner);
+			}
 		}
 		
 		void IProgress<Tuple<string, double, bool>>.Report(Tuple<string, double, bool> value)
@@ -159,7 +165,6 @@ namespace Usalizer
 			}
 		}
 		
-		
 		public static void AnalyzeThis(DelphiFile result)
 		{
 			var root = new SharpTreeNode();
@@ -190,22 +195,6 @@ namespace Usalizer
 		void SearchClick(object sender, System.Windows.RoutedEventArgs e)
 		{
 			FilterNodes(searchText.Text);
-		}
-		
-		void UnusedUnitsSearchBoxKeyDown(object sender, KeyEventArgs e)
-		{
-			if (e.Key == Key.Enter)
-				FilterUnusedUnits(((TextBox)sender).Text);
-		}
-		
-		void UnusedUnitsSearchClick(object sender, System.Windows.RoutedEventArgs e)
-		{
-			FilterUnusedUnits(searchText.Text);
-		}
-
-		void FilterUnusedUnits(string text)
-		{
-			throw new NotImplementedException();
 		}
 		
 		void LoadSettings()
@@ -255,7 +244,7 @@ namespace Usalizer
 		void PathTextBoxMouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
 		{
 			TextBox target = (TextBox)sender;
-			string path = DelphiIncludeResolver.MakeAbsolute(Environment.CurrentDirectory, target.Text); 
+			string path = DelphiIncludeResolver.MakeAbsolute(Environment.CurrentDirectory, target.Text);
 			if (!Directory.Exists(path))
 				path = "";
 			var dlg = new VistaFolderBrowserDialog { SelectedPath = path };

@@ -6,35 +6,12 @@
         Icon="usalizer-icon32.ico"
         Title="Usalizer" Height="500" Width="700">
 	<DockPanel>
-		<StatusBar DockPanel.Dock="Bottom">
-			<StatusBar.ItemsPanel>
-				<ItemsPanelTemplate>
-					<Grid>
-						<Grid.RowDefinitions>
-							<RowDefinition Height="Auto"/>
-						</Grid.RowDefinitions>
-						<Grid.ColumnDefinitions>
-							<ColumnDefinition Width="*"/>
-							<ColumnDefinition Width="Auto"/>
-							<ColumnDefinition Width="Auto"/>
-							<ColumnDefinition Width="Auto"/>
-							<ColumnDefinition Width="Auto"/>
-						</Grid.ColumnDefinitions>
-					</Grid>
-				</ItemsPanelTemplate>
-			</StatusBar.ItemsPanel>
-			<StatusBarItem Margin="3" Content="" />
-			<Separator Grid.Column="1" Width="1" />
-			<StatusBarItem Margin="3" Grid.Column="2" Name="unitCount" />
-			<Separator Grid.Column="3" Width="1" />
-			<StatusBarItem Margin="3" Grid.Column="4" Name="packageCount" />
-		</StatusBar>
 		<Grid>
 			<Grid.RowDefinitions>
 				<RowDefinition Height="Auto"/>
 				<RowDefinition Height="*"/>
 			</Grid.RowDefinitions>
-			<Expander Name="input" Header="Input" ExpandDirection="Left" IsExpanded="True" Collapsed="InputCollapsed" Expanded="InputCollapsed">
+			<Expander Name="input" ExpandDirection="Left" IsExpanded="True" Collapsed="InputCollapsed" Expanded="InputCollapsed">
 				<Grid>
 					<Grid.RowDefinitions>
 						<RowDefinition Height="Auto"/>
@@ -78,19 +55,7 @@
 					</DockPanel>
 				</TabItem>
 				<TabItem Header="Unused Units">
-					<DockPanel>
-						<Grid DockPanel.Dock="Top">
-							<Grid.ColumnDefinitions>
-								<ColumnDefinition Width="Auto" />
-								<ColumnDefinition Width="*" />
-								<ColumnDefinition Width="Auto" />
-							</Grid.ColumnDefinitions>
-							<Label Margin="3">Unit-Name:</Label>
-							<TextBox Margin="3" Grid.Column="1" Name="unusedUnitsSearchText" KeyDown="UnusedUnitsSearchBoxKeyDown" />
-							<Button Margin="5" Grid.Column="2" Click="UnusedUnitsSearchClick">Search</Button>
-						</Grid>
-						<ListBox Margin="3" Name="unusedUnits" />
-					</DockPanel>
+					<ListBox Margin="3" Name="unusedUnits" DisplayMemberPath="Location" />
 				</TabItem>
 				<TabItem Header="Code Browser">
 					<ae:TextEditor Name="codeBrowser" ShowLineNumbers="True" FontFamily="Consolas" Margin="3" />

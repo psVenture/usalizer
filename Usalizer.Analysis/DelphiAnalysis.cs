@@ -41,6 +41,7 @@ namespace Usalizer.Analysis
 		string projectGroupFile;
 		string[] symbols;
 		readonly MultiDictionary<string, DelphiFile> allUnits;
+		readonly List<DelphiFile> unusedUnits;
 		readonly List<Package> packages;
 		string[] pasFiles;
 		string[] incFiles;
@@ -55,7 +56,10 @@ namespace Usalizer.Analysis
 		public int PackageCount {
 			get { return packages.Count; }
 		}
-		
+
+		public IReadOnlyList<DelphiFile> UnusedUnits {
+			get { return unusedUnits; }
+		}
 		public DelphiAnalysis(string path, string projectGroupFile, string[] symbols, IProgress<Tuple<string, double, bool>> progress)
 		{
 			this.path = path;
@@ -63,6 +67,7 @@ namespace Usalizer.Analysis
 			this.symbols = symbols;
 			this.progress = progress;
 			allUnits = new MultiDictionary<string, DelphiFile>(StringComparer.OrdinalIgnoreCase);
+			unusedUnits = new List<DelphiFile>();
 			packages = new List<Package>();
 		}
 		
@@ -116,6 +121,12 @@ namespace Usalizer.Analysis
 				foreach (var use in unit.Uses) {
 					use.Resolve(this);
 				}
+				progress.Report(Tuple.Create(unit.UnitName, 1.0 / allUnits.Count, false));
+			}
+			progress.Report(Tuple.Create("Find unused units...", 0.0, true));
+			foreach (var unit in allUnits.SelectMany(u => u)) {
+				if (!unit.UsedByFiles.Any() && !unit.DirectlyInPackages.Any())
+					unusedUnits.Add(unit);
 				progress.Report(Tuple.Create(unit.UnitName, 1.0 / allUnits.Count, false));
 			}
 		}
