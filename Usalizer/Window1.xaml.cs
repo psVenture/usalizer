@@ -72,7 +72,7 @@ namespace Usalizer
 				return;
 			
 			current.codeBrowser.Document.Text = File.ReadAllText(fileName);
-			current.resultsView.SelectedIndex = 2;
+			current.resultsView.SelectedItem = current.codeBrowserTab;
 		}
 		
 		void StartClick(object sender, RoutedEventArgs e)
@@ -112,6 +112,9 @@ namespace Usalizer
 				              	                       	resultsView.Visibility = Visibility.Visible;
 				              	                       	progressView.Visibility = Visibility.Hidden;
 				              	                       	unusedUnits.ItemsSource = currentAnalysis.UnusedUnits;
+				              	                       	unusedUnitsTab.Header = "Unused Units (" + currentAnalysis.UnusedUnits.Count + ")";
+				              	                       	implicitUnits.ItemsSource = currentAnalysis.ImplicitlyUsedUnits;
+				              	                       	implicitUnitsTab.Header = "Implicitly used Units (" + currentAnalysis.ImplicitlyUsedUnits.Count + ")";
 				              	                       	AdornerLayer.GetAdornerLayer(resultsView).Add(infoAdorner);
 				              	                       	startButton.IsEnabled = true;
 				              	                       });
@@ -264,6 +267,8 @@ namespace Usalizer
 		void InputCollapsed(object sender, RoutedEventArgs e)
 		{
 			Grid.SetRow(input, input.IsExpanded ? 0 : 1);
+			input.HorizontalAlignment = input.IsExpanded ? HorizontalAlignment.Stretch : HorizontalAlignment.Right;
+			input.VerticalAlignment = input.IsExpanded ? VerticalAlignment.Stretch : VerticalAlignment.Top;
 		}
 	}
 }

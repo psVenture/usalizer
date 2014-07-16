@@ -11,6 +11,36 @@
 				<RowDefinition Height="Auto"/>
 				<RowDefinition Height="*"/>
 			</Grid.RowDefinitions>
+			<StackPanel Orientation="Vertical" Grid.Row="1" Name="progressView" Visibility="Collapsed">
+				<ProgressBar Name="progress" Margin="3" Height="16" Width="500" Maximum="1" Minimum="0" />
+				<TextBlock Name="progressText" Width="500" TextTrimming="CharacterEllipsis" />
+			</StackPanel>
+			<TabControl Grid.Row="1" Name="resultsView" Visibility="Collapsed">
+				<TabItem Header="Results">
+					<DockPanel>
+						<Grid DockPanel.Dock="Top">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="Auto" />
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
+							<Label Margin="3">Unit-Name:</Label>
+							<TextBox Margin="3" Grid.Column="1" Name="searchText" KeyDown="TreeViewSearchBoxKeyDown" />
+							<Button Margin="5" Grid.Column="2" Click="SearchClick">Search</Button>
+						</Grid>
+						<tv:SharpTreeView Margin="3" Name="resultsTree" />
+					</DockPanel>
+				</TabItem>
+				<TabItem Name="unusedUnitsTab" Header="Unused Units">
+					<ListBox Margin="3" Name="unusedUnits" DisplayMemberPath="Location" />
+				</TabItem>
+				<TabItem Name="implicitUnitsTab" Header="Implicitly used Units">
+					<ListBox Margin="3" Name="implicitUnits" DisplayMemberPath="Location" />
+				</TabItem>
+				<TabItem Name="codeBrowserTab" Header="Code Browser">
+					<ae:TextEditor Name="codeBrowser" ShowLineNumbers="True" FontFamily="Consolas" Margin="3" />
+				</TabItem>
+			</TabControl>
 			<Expander Name="input" ExpandDirection="Left" IsExpanded="True" Collapsed="InputCollapsed" Expanded="InputCollapsed">
 				<Grid>
 					<Grid.RowDefinitions>
@@ -34,33 +64,6 @@
 					</StackPanel>
 				</Grid>
 			</Expander>
-			<StackPanel Orientation="Vertical" Grid.Row="1" Name="progressView" Visibility="Collapsed">
-				<ProgressBar Name="progress" Margin="3" Height="16" Width="500" Maximum="1" Minimum="0" />
-				<TextBlock Name="progressText" Width="500" TextTrimming="CharacterEllipsis" />
-			</StackPanel>
-			<TabControl Grid.Row="1" Name="resultsView" Visibility="Collapsed">
-				<TabItem Header="Results">
-					<DockPanel>
-						<Grid DockPanel.Dock="Top">
-							<Grid.ColumnDefinitions>
-								<ColumnDefinition Width="Auto" />
-								<ColumnDefinition Width="*" />
-								<ColumnDefinition Width="Auto" />
-							</Grid.ColumnDefinitions>
-							<Label Margin="3">Unit-Name:</Label>
-							<TextBox Margin="3" Grid.Column="1" Name="searchText" KeyDown="TreeViewSearchBoxKeyDown" />
-							<Button Margin="5" Grid.Column="2" Click="SearchClick">Search</Button>
-						</Grid>
-						<tv:SharpTreeView Margin="3" Name="resultsTree" />
-					</DockPanel>
-				</TabItem>
-				<TabItem Header="Unused Units">
-					<ListBox Margin="3" Name="unusedUnits" DisplayMemberPath="Location" />
-				</TabItem>
-				<TabItem Header="Code Browser">
-					<ae:TextEditor Name="codeBrowser" ShowLineNumbers="True" FontFamily="Consolas" Margin="3" />
-				</TabItem>
-			</TabControl>
 		</Grid>
 	</DockPanel>
 </Window>

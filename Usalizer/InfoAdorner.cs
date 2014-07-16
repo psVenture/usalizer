@@ -40,7 +40,7 @@ namespace Usalizer
 		protected override void OnRender(DrawingContext drawingContext)
 		{
 			base.OnRender(drawingContext);
-			string text = "Units: " + analysis.UnitCount + " (" + analysis.UnusedUnits.Count + " unused)    Packages: " + analysis.PackageCount;
+			string text = string.Format("{0} Units in {1} Packages", analysis.UnitCount, analysis.PackageCount);
 			var tabControl = (TabControl)AdornedElement;
 			var font = new Typeface(tabControl.FontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 			var formattedText = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, font, tabControl.FontSize, Brushes.Black);

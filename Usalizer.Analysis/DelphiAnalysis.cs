@@ -1,5 +1,6 @@
 ﻿// Copyright (c) 2014 Stallinger Michael and Pammer Siegfried
 // 
+
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
 // without restriction, including without limitation the rights to use, copy, modify, merge,
@@ -42,6 +43,7 @@ namespace Usalizer.Analysis
 		string[] symbols;
 		readonly MultiDictionary<string, DelphiFile> allUnits;
 		readonly List<DelphiFile> unusedUnits;
+		readonly List<DelphiFile> implicitlyUsedUnits;
 		readonly List<Package> packages;
 		string[] pasFiles;
 		string[] incFiles;
@@ -60,6 +62,10 @@ namespace Usalizer.Analysis
 		public IReadOnlyList<DelphiFile> UnusedUnits {
 			get { return unusedUnits; }
 		}
+
+		public IReadOnlyList<DelphiFile> ImplicitlyUsedUnits {
+			get { return implicitlyUsedUnits; }
+		}		
 		
 		PackageOrderIComparer packageOrder;
 		
@@ -92,6 +98,7 @@ namespace Usalizer.Analysis
 			this.progress = progress;
 			allUnits = new MultiDictionary<string, DelphiFile>(StringComparer.OrdinalIgnoreCase);
 			unusedUnits = new List<DelphiFile>();
+			implicitlyUsedUnits = new List<DelphiFile>();
 			packages = new List<Package>();
 		}
 		
@@ -148,10 +155,13 @@ namespace Usalizer.Analysis
 				}
 				progress.Report(Tuple.Create(unit.UnitName, 1.0 / allUnits.Count, false));
 			}
-			progress.Report(Tuple.Create("Find unused units...", 0.0, true));
+			progress.Report(Tuple.Create("Find unused or implicitly used units...", 0.0, true));
 			foreach (var unit in allUnits.SelectMany(u => u)) {
-				if (!unit.UsedByFiles.Any() && !unit.DirectlyInPackages.Any())
-					unusedUnits.Add(unit);
+				if (!unit.DirectlyInPackages.Any()) {
+					implicitlyUsedUnits.Add(unit);
+					if (!unit.UsedByFiles.Any())
+						unusedUnits.Add(unit);
+				}
 				progress.Report(Tuple.Create(unit.UnitName, 1.0 / allUnits.Count, false));
 			}
 		}
