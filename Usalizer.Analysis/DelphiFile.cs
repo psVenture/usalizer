@@ -16,6 +16,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -24,7 +25,8 @@ namespace Usalizer.Analysis
 	public class DelphiFile
 	{
 		public string UnitName { get; private set; }
-		public string Location { get; private set; }
+		public string FileName { get; private set; }
+		public string Location { get { return Path.GetDirectoryName(FileName); } }
 		public List<UsesClause> InterfaceUses { get; private set; }
 		public List<UsesClause> ImplementationUses { get; private set; }
 		
@@ -41,7 +43,7 @@ namespace Usalizer.Analysis
 		public DelphiFile(string unitName, string location)
 		{
 			this.UnitName = unitName;
-			this.Location = location;
+			this.FileName = location;
 			this.ImplementationUses = new List<UsesClause>();
 			this.InterfaceUses = new List<UsesClause>();
 			this.UsedByFiles = new List<DelphiFile>();
@@ -51,7 +53,7 @@ namespace Usalizer.Analysis
 		
 		public override string ToString()
 		{
-			return string.Format("[DelphiFile UnitName={0}, Location={1}]", UnitName, Location);
+			return string.Format("[DelphiFile UnitName={0}, Location={1}]", UnitName, FileName);
 		}
 	}
 	

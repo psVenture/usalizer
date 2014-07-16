@@ -59,7 +59,7 @@ namespace Usalizer.TreeNodes
 					break;
 			}
 			Children.AddRange(source.OrderBy(c => c.Name).Select(c =>  {
-				var resolved = Window1.CurrentAnalysis.ResolveUnitName(file.Location, c.Name, c.InLocation);
+				var resolved = Window1.CurrentAnalysis.ResolveUnitName(file.FileName, c.Name, c.InLocation);
 				SharpTreeNode node;
 				if (resolved == null)
 					node = new UnresolvedReferenceTreeNode(c);

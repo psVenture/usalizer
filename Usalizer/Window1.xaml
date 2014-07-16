@@ -32,10 +32,58 @@
 					</DockPanel>
 				</TabItem>
 				<TabItem Name="unusedUnitsTab" Header="Unused Units">
-					<ListBox Margin="3" Name="unusedUnits" DisplayMemberPath="Location" />
+					<ListBox Margin="3" Name="unusedUnits" DisplayMemberPath="FileName">
+						<ListBox.GroupStyle>
+							<GroupStyle>
+								<GroupStyle.ContainerStyle>
+									<Style TargetType="{x:Type GroupItem}">
+										<Setter Property="Template">
+											<Setter.Value>
+												<ControlTemplate>
+													<Expander IsExpanded="True">
+														<Expander.Header>
+															<StackPanel Orientation="Horizontal">
+																<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" VerticalAlignment="Bottom" />
+																<TextBlock Text="{Binding ItemCount, StringFormat={}{0} unit(s)}" FontSize="14" Foreground="Green" FontWeight="Bold" FontStyle="Italic" Margin="10,0,0,0" VerticalAlignment="Bottom" />
+															</StackPanel>
+														</Expander.Header>
+														<ItemsPresenter />
+													</Expander>
+												</ControlTemplate>
+											</Setter.Value>
+										</Setter>
+									</Style>
+								</GroupStyle.ContainerStyle>
+							</GroupStyle>
+						</ListBox.GroupStyle>
+					</ListBox>
 				</TabItem>
 				<TabItem Name="implicitUnitsTab" Header="Implicitly used Units">
-					<ListBox Margin="3" Name="implicitUnits" DisplayMemberPath="Location" />
+					<ListBox Margin="3" Name="implicitUnits" DisplayMemberPath="FileName">
+						<ListBox.GroupStyle>
+							<GroupStyle>
+								<GroupStyle.ContainerStyle>
+									<Style TargetType="{x:Type GroupItem}">
+										<Setter Property="Template">
+											<Setter.Value>
+												<ControlTemplate>
+													<Expander IsExpanded="True">
+														<Expander.Header>
+															<StackPanel Orientation="Horizontal">
+																<TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" VerticalAlignment="Bottom" />
+																<TextBlock Text="{Binding ItemCount, StringFormat={}{0} unit(s)}" FontSize="14" Foreground="Green" FontWeight="Bold" FontStyle="Italic" Margin="10,0,0,0" VerticalAlignment="Bottom" />
+															</StackPanel>
+														</Expander.Header>
+														<ItemsPresenter />
+													</Expander>
+												</ControlTemplate>
+											</Setter.Value>
+										</Setter>
+									</Style>
+								</GroupStyle.ContainerStyle>
+							</GroupStyle>
+						</ListBox.GroupStyle>
+					</ListBox>
 				</TabItem>
 				<TabItem Name="codeBrowserTab" Header="Code Browser">
 					<ae:TextEditor Name="codeBrowser" ShowLineNumbers="True" FontFamily="Consolas" Margin="3" />

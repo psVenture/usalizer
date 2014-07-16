@@ -366,13 +366,13 @@ namespace Usalizer.Analysis
 			var matches = allUnits[unitName];
 			if (inLocation != null) {
 				inLocation = DelphiIncludeResolver.MakeAbsolute(contextLocation, inLocation);
-				return matches.FirstOrDefault(m => string.Equals(m.Location, inLocation, StringComparison.OrdinalIgnoreCase));
+				return matches.FirstOrDefault(m => string.Equals(m.FileName, inLocation, StringComparison.OrdinalIgnoreCase));
 			}
 			if (matches.Count == 1) {
 				return matches[0];
 			} else {
 				string searchFileName = Path.Combine(Path.GetDirectoryName(contextLocation), unitName + ".pas");
-				var result = matches.FirstOrDefault(m => string.Equals(m.Location, searchFileName, StringComparison.OrdinalIgnoreCase));
+				var result = matches.FirstOrDefault(m => string.Equals(m.FileName, searchFileName, StringComparison.OrdinalIgnoreCase));
 				if (result != null)
 					return result;
 				return matches.FirstOrDefault();

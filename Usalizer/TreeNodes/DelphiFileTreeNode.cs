@@ -50,7 +50,7 @@ namespace Usalizer.TreeNodes
 		{
 			new ContextMenu {
 				ItemsSource = new object[] {
-					MenuCommands.CreateBrowseCode(file.Location),
+					MenuCommands.CreateBrowseCode(file.FileName),
 					MenuCommands.CreateAnalyzeThis(file),
 					new Separator(),
 					MenuCommands.CreateCopyUnitName(file),
@@ -180,7 +180,7 @@ namespace Usalizer.TreeNodes
 		{
 			new ContextMenu {
 				ItemsSource = new object[] {
-					MenuCommands.CreateBrowseCode(node.Location),
+					MenuCommands.CreateBrowseCode(node.FileName),
 					MenuCommands.CreateAnalyzeThis(node),
 					new Separator(),
 					MenuCommands.CreateCopyUnitName(node),
@@ -316,7 +316,7 @@ namespace Usalizer.TreeNodes
 			var item = new MenuItem {
 				Header = "Copy location"
 			};
-			item.Click += (sender, e) => Clipboard.SetText(file.Location);
+			item.Click += (sender, e) => Clipboard.SetText(file.FileName);
 			return item;
 		}
 		
